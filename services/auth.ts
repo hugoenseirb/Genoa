@@ -5,7 +5,7 @@ const API_URL = Constants.expoConfig?.extra?.apiUrl;
 type LoginResponse = {
   token: string;
   user: {
-    id: number;
+    id: string;
     email: string;
     username: string;
     role: string;
@@ -16,7 +16,7 @@ type LoginResponse = {
 type RegisterResponse = {
   message: string;
   user?: {
-    id: number;
+    id: string;
     email: string;
     username: string;
     role: string;
@@ -26,8 +26,17 @@ type RegisterResponse = {
   token?: string;
 };
 
+function getApiUrl(): string {
+  if (!API_URL) {
+    throw new Error('API_URL introuvable');
+  }
+  return API_URL;
+}
+
 export async function loginRequest(email: string, password: string): Promise<LoginResponse> {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const baseUrl = getApiUrl();
+
+  const response = await fetch(`${baseUrl}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +58,9 @@ export async function registerRequest(
   password: string,
   username: string
 ): Promise<RegisterResponse> {
-  const response = await fetch(`${API_URL}/auth/register`, {
+  const baseUrl = getApiUrl();
+
+  const response = await fetch(`${baseUrl}/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

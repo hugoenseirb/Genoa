@@ -3,10 +3,11 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   Alert,
-} from 'react-native';
+} from 'react-native'; 
+
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { registerRequest } from '@/services/auth';
@@ -21,23 +22,33 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     if (!username.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Erreur', 'Remplis tous les champs.');
-      return;
+        Alert.alert('Erreur', 'Remplis tous les champs.');
+        return;
     }
 
     try {
-      setLoading(true);
+        setLoading(true);
+        //log des ID renseignés pr vérif
+        console.log("ENVOI FRONT → BACK");
+        console.log({
+        username,
+        email,
+        password,
+        });
+      const data = await registerRequest(email, password, username); //envoie les données au server
 
-      const data = await registerRequest(email, password, username);
+      //log de la reponse server
+        console.log("REPONSE BACK → FRONT");
+        console.log(data);
 
-      // Si premier utilisateur → token direct (admin)
+      // Si premier utilisateur : token direct (admin)
       if (data.token) {
         await login(data.token);
         router.replace('/(tabs)');
         return;
       }
 
-      // Sinon → compte pending
+      // Sinon : compte pending
       Alert.alert(
         'Compte créé',
         data.message || 'En attente de validation par un admin'
@@ -83,19 +94,19 @@ export default function RegisterScreen() {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+      <Pressable
+        style={({ pressed }) => [
+            styles.button,
+            loading && styles.buttonDisabled,
+            pressed && { opacity: 0.8 },
+        ]}
         onPress={handleRegister}
         disabled={loading}
-      >
+        >
         <Text style={styles.buttonText}>
-          {loading ? 'Création...' : "S'inscrire"}
+            {loading ? 'Création...' : "S'inscrire"}
         </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => router.replace('/login')}>
-        <Text style={styles.link}>Déjà un compte ? Se connecter</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
