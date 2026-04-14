@@ -1,50 +1,182 @@
-# Welcome to your Expo app 👋
+# Genoa — Application de gestion d'arbre généalogique
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+INP – ENSEIRB-MATMECA – Télécom 2A  
+ET8 PG219 : Développement d'applications pour terminaux mobiles
 
-## Get started
+## Stack technique
 
-1. Install dependencies
+| Composant | Technologie |
+|-----------|-------------|
+| Frontend | React Native (Expo) |
+| Backend / API | Node.js + Express |
+| Base de données | PostgreSQL |
+| Authentification | JWT (jsonwebtoken + bcryptjs) |
+| Temps réel | Socket.IO |
+| Visualisation arbre | D3.js / d3-dag (via WebView) |
 
-   ```bash
-   npm install
-   ```
+## Fonctionnalités implémentées
 
-2. Start the app
+### 🔐 1. Inscription & Authentification — *Antoine Husser*
+- Inscription avec email unique et mot de passe hashé (bcrypt)
+- Le premier inscrit devient automatiquement administrateur
+- Les inscriptions suivantes sont en attente de validation admin
+- Connexion avec génération d'un JWT valide 24h
+- Blocage de la connexion si le compte est en attente ou désactivé
+- Route `GET /auth/me` pour récupérer l'utilisateur courant
 
-   ```bash
-   npx expo start
-   ```
+### 👤 2. Gestion des utilisateurs (Administration) — *Antoine Husser*
+- Liste de tous les utilisateurs
+- Liste des inscriptions en attente
+- Validation d'une inscription (pending → active)
+- Modification du rôle d'un utilisateur (admin / editor / reader)
+- Modification d'un compte (email, username, password)
+- Création d'un compte pour un tiers directement actif
+- Suppression d'un compte
 
-In the output, you'll find options to open the app in a
+### 🌳 3. Gestion des membres — *Antoine Husser (API) / Membre B (UI)*
+- Création d'un membre avec tous les attributs : nom, prénom, sexe, photo, dates, professions, coordonnées, notes publiques/privées
+- Modification et suppression d'un membre
+- Upload de photo (jpeg, png, webp — 5MB max)
+- Recherche par nom ou prénom (`?q=`)
+- Les données privées (`notes_private`, `contacts`) sont masquées pour les lecteurs
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 🔗 4. Gestion des relations familiales — *Antoine Husser (API) / Membre B (UI)*
+- Création de relations de type **couple** (avec dates d'union/séparation, type : mariage/partenariat)
+- Création de relations **parent-enfant** (biologique ou adopté)
+- Validation de cohérence : pas de doublon, pas de self-relation
+- Détection de cycle : empêche qu'un descendant devienne ancêtre (CTE récursif PostgreSQL)
+- Suppression d'une relation
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 📊 5. Visualisation de l'arbre généalogique — *Membre B*
+- Affichage graphique interactif (D3.js via WebView)
+- Zoom / déplacement
+- Clic sur un nœud → détails du membre
+- Filtres : ascendants, descendants, fratrie, conjoints
 
-## Get a fresh project
+### 🔎 6. API de navigation dans l'arbre — *Antoine Husser*
+- `GET /tree/:memberId` — sous-graphe (membre + parents + enfants + conjoints)
+- `GET /tree/ancestors/:memberId` — tous les ancêtres (CTE récursif)
+- `GET /tree/descendants/:memberId` — tous les descendants (CTE récursif)
+- `GET /tree/siblings/:memberId` — fratrie
 
-When you're ready, run:
+### 📈 7. Statistiques familiales — *Antoine Husser (API) / Membre B (UI)*
+- Nombre total de membres
+- Répartition hommes / femmes
+- Espérance de vie moyenne (membres décédés)
+- Nombre moyen d'enfants par parent
+- Nombre de générations
+- Nombre de couples
+
+### 🛡️ 8. Gestion des droits & confidentialité — *Antoine Husser*
+- 3 rôles : `admin`, `editor`, `reader`
+- Middleware `verifyToken` : vérifie le JWT sur chaque route protégée
+- Middleware `requireEditor` / `requireAdmin` : contrôle d'accès par rôle
+- Données privées visibles uniquement par les éditeurs et administrateurs
+
+### ⚡ 9. Temps réel Socket.IO — *Antoine Husser (serveur) / Membre B (client)*
+- Authentification Socket.IO via JWT (handshake)
+- Système de verrous : indique qu'un membre est en cours de modification
+- Événements `lock:acquire`, `lock:release`, `lock:denied`
+- Broadcast des modifications en temps réel : `tree:member_updated`, `tree:relation_created`, etc.
+- Libération automatique des verrous à la déconnexion
+
+---
+
+## Installation et démarrage
+
+### Prérequis
+- Node.js 18+
+- PostgreSQL 16+
+- Expo CLI
+
+### Backend
 
 ```bash
-npm run reset-project
+cd server
+npm install
+cp .env.example .env   # Remplir DATABASE_URL et JWT_SECRET
+node db/migrate.js     # Initialiser la base de données
+npm start              # Démarrer sur le port 3000
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Frontend
 
-## Learn more
+```bash
+npm install
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Variables d'environnement
 
-## Join the community
+Copier `server/.env.example` en `server/.env` et remplir :
 
-Join our community of developers creating universal apps.
+```
+DATABASE_URL=postgresql://utilisateur@localhost:5432/genoa
+JWT_SECRET=un_secret_long_et_aleatoire
+JWT_EXPIRES_IN=24h
+PORT=3000
+CLIENT_URL=http://localhost:8081
+UPLOAD_DIR=./uploads
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## Routes API
+
+| Méthode | Route | Rôle requis |
+|---------|-------|-------------|
+| POST | `/api/v1/auth/register` | Public |
+| POST | `/api/v1/auth/login` | Public |
+| GET | `/api/v1/auth/me` | Connecté |
+| GET | `/api/v1/users` | Admin |
+| GET | `/api/v1/users/pending` | Admin |
+| PATCH | `/api/v1/users/:id/approve` | Admin |
+| PATCH | `/api/v1/users/:id/role` | Admin |
+| PUT | `/api/v1/users/:id` | Admin |
+| POST | `/api/v1/users` | Admin |
+| DELETE | `/api/v1/users/:id` | Admin |
+| GET | `/api/v1/members` | Connecté |
+| POST | `/api/v1/members` | Éditeur+ |
+| GET | `/api/v1/members/:id` | Connecté |
+| PUT | `/api/v1/members/:id` | Éditeur+ |
+| DELETE | `/api/v1/members/:id` | Éditeur+ |
+| POST | `/api/v1/members/:id/photo` | Éditeur+ |
+| GET | `/api/v1/relations?memberId=` | Connecté |
+| POST | `/api/v1/relations` | Éditeur+ |
+| DELETE | `/api/v1/relations/:id` | Éditeur+ |
+| GET | `/api/v1/tree/:memberId` | Connecté |
+| GET | `/api/v1/tree/ancestors/:memberId` | Connecté |
+| GET | `/api/v1/tree/descendants/:memberId` | Connecté |
+| GET | `/api/v1/tree/siblings/:memberId` | Connecté |
+| GET | `/api/v1/stats` | Connecté |
+
+---
+
+## Structure du projet
+
+```
+Genoa/
+├── server/                  # API REST Node.js + Express
+│   ├── config/db.js         # Connexion PostgreSQL
+│   ├── middleware/
+│   │   ├── auth.js          # verifyToken, requireRole
+│   │   └── upload.js        # Multer photos
+│   ├── routes/
+│   │   ├── auth.js
+│   │   ├── users.js
+│   │   ├── members.js
+│   │   ├── relations.js
+│   │   ├── tree.js
+│   │   └── stats.js
+│   ├── socket/socket.js     # Socket.IO
+│   ├── db/
+│   │   ├── init.sql         # Schéma BDD
+│   │   ├── migrate.js
+│   │   └── rollback.js
+│   └── index.js             # Entry point
+│
+└── app/                     # Application React Native (Expo)
+    └── ...
+```

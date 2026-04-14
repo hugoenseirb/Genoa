@@ -1,0 +1,27 @@
+{
+  "name": "genoa-server",
+  "version": "1.0.0",
+  "description": "Genoa API REST - Arbre généalogique",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "nodemon index.js",
+    "migrate": "node db/migrate.js",
+    "migrate:rollback": "node db/rollback.js",
+    "db:reset": "node db/reset.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
