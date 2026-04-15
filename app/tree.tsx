@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,12 @@ type Relation = {
   member_a_last_name?: string;
   member_b_first_name?: string;
   member_b_last_name?: string;
+};
+
+type DisplayMember = {
+  id: string;
+  first_name: string;
+  last_name: string;
 };
 
 export default function TreeScreen() {
@@ -122,98 +128,127 @@ export default function TreeScreen() {
     return members.find((member) => member.id === id) || null;
   }
 
+  function uniqueMembers(list: DisplayMember[]) {
+    const map = new Map<string, DisplayMember>();
+    list.forEach((member) => {
+      map.set(member.id, member);
+    });
+    return Array.from(map.values());
+  }
+
   const selectedMember = selectedMemberId ? getMemberById(selectedMemberId) : null;
 
-  const parents = relations
-    .filter(
-      (relation) =>
-        relation.type === 'parent_child' &&
-        relation.member_b_id === selectedMemberId
-    )
-    .map((relation) => ({
-      id: relation.member_a_id,
-      first_name:
-        relation.member_a_first_name ||
-        getMemberById(relation.member_a_id)?.first_name ||
-        '',
-      last_name:
-        relation.member_a_last_name ||
-        getMemberById(relation.member_a_id)?.last_name ||
-        '',
-    }));
+  const parents = useMemo(() => {
+    const values = relations
+      .filter(
+        (relation) =>
+          relation.type === 'parent_child' && relation.member_b_id === selectedMemberId
+      )
+      .map((relation) => ({
+        id: relation.member_a_id,
+        first_name:
+          relation.member_a_first_name ||
+          getMemberById(relation.member_a_id)?.first_name ||
+          '',
+        last_name:
+          relation.member_a_last_name ||
+          getMemberById(relation.member_a_id)?.last_name ||
+          '',
+      }));
 
-  const children = relations
-    .filter(
-      (relation) =>
-        relation.type === 'parent_child' &&
-        relation.member_a_id === selectedMemberId
-    )
-    .map((relation) => ({
-      id: relation.member_b_id,
-      first_name:
-        relation.member_b_first_name ||
-        getMemberById(relation.member_b_id)?.first_name ||
-        '',
-      last_name:
-        relation.member_b_last_name ||
-        getMemberById(relation.member_b_id)?.last_name ||
-        '',
-    }));
+    return uniqueMembers(values);
+  }, [relations, selectedMemberId, members]);
 
-  const partners = relations
-    .filter(
-      (relation) =>
-        relation.type === 'couple' &&
-        (relation.member_a_id === selectedMemberId ||
-          relation.member_b_id === selectedMemberId)
-    )
-    .map((relation) => {
-      const isASelected = relation.member_a_id === selectedMemberId;
+  const children = useMemo(() => {
+    const values = relations
+      .filter(
+        (relation) =>
+          relation.type === 'parent_child' && relation.member_a_id === selectedMemberId
+      )
+      .map((relation) => ({
+        id: relation.member_b_id,
+        first_name:
+          relation.member_b_first_name ||
+          getMemberById(relation.member_b_id)?.first_name ||
+          '',
+        last_name:
+          relation.member_b_last_name ||
+          getMemberById(relation.member_b_id)?.last_name ||
+          '',
+      }));
 
-      return isASelected
-        ? {
-            id: relation.member_b_id,
-            first_name:
-              relation.member_b_first_name ||
-              getMemberById(relation.member_b_id)?.first_name ||
-              '',
-            last_name:
-              relation.member_b_last_name ||
-              getMemberById(relation.member_b_id)?.last_name ||
-              '',
-          }
-        : {
-            id: relation.member_a_id,
-            first_name:
-              relation.member_a_first_name ||
-              getMemberById(relation.member_a_id)?.first_name ||
-              '',
-            last_name:
-              relation.member_a_last_name ||
-              getMemberById(relation.member_a_id)?.last_name ||
-              '',
-          };
-    });
+    return uniqueMembers(values);
+  }, [relations, selectedMemberId, members]);
 
-  function renderMemberCard(
-    member: { id: string; first_name: string; last_name: string },
-    variant: 'main' | 'secondary' = 'secondary'
-  ) {
+  const partners = useMemo(() => {
+    const values = relations
+      .filter(
+        (relation) =>
+          relation.type === 'couple' &&
+          (relation.member_a_id === selectedMemberId || relation.member_b_id === selectedMemberId)
+      )
+      .map((relation) => {
+        const isASelected = relation.member_a_id === selectedMemberId;
+
+        return isASelected
+          ? {
+              id: relation.member_b_id,
+              first_name:
+                relation.member_b_first_name ||
+                getMemberById(relation.member_b_id)?.first_name ||
+                '',
+              last_name:
+                relation.member_b_last_name ||
+                getMemberById(relation.member_b_id)?.last_name ||
+                '',
+            }
+          : {
+              id: relation.member_a_id,
+              first_name:
+                relation.member_a_first_name ||
+                getMemberById(relation.member_a_id)?.first_name ||
+                '',
+              last_name:
+                relation.member_a_last_name ||
+                getMemberById(relation.member_a_id)?.last_name ||
+                '',
+            };
+      });
+
+    return uniqueMembers(values);
+  }, [relations, selectedMemberId, members]);
+
+  function renderNode(member: DisplayMember, variant: 'main' | 'secondary' = 'secondary') {
     return (
       <Pressable
         key={member.id}
         style={[
-          styles.memberCard,
-          variant === 'main' ? styles.mainMemberCard : styles.secondaryMemberCard,
+          styles.node,
+          variant === 'main' ? styles.mainNode : styles.secondaryNode,
         ]}
         onPress={() => setSelectedMemberId(member.id)}
       >
-        <Text style={styles.memberName}>
+        <Text style={styles.nodeName} numberOfLines={2}>
           {member.first_name} {member.last_name}
         </Text>
       </Pressable>
     );
   }
+
+  function renderNodeRow(items: DisplayMember[], emptyText: string, centered = false) {
+    if (items.length === 0) {
+      return <Text style={styles.emptyText}>{emptyText}</Text>;
+    }
+
+    return (
+      <View style={[styles.nodeRow, centered && styles.nodeRowCentered]}>
+        {items.map((member) => renderNode(member))}
+      </View>
+    );
+  }
+
+  const parentLineWidth = Math.max(70, Math.min(parents.length * 140, 520));
+  const childLineWidth = Math.max(70, Math.min(children.length * 140, 520));
 
   if (loadingMembers) {
     return (
@@ -225,13 +260,14 @@ export default function TreeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Arbre simplifié</Text>
+      <Text style={styles.title}>Arbre</Text>
+      <Text style={styles.subtitle}>Vue graphe simplifiée</Text>
 
       <Text style={styles.sectionTitle}>Choix du membre central</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.selectorRow}
+        contentContainerStyle={styles.selectorContent}
       >
         {members.map((member) => (
           <Pressable
@@ -242,7 +278,7 @@ export default function TreeScreen() {
             ]}
             onPress={() => setSelectedMemberId(member.id)}
           >
-            <Text style={styles.selectorText}>
+            <Text style={styles.selectorText} numberOfLines={1}>
               {member.first_name} {member.last_name}
             </Text>
           </Pressable>
@@ -254,45 +290,36 @@ export default function TreeScreen() {
           <ActivityIndicator size="small" color="#2563EB" />
         </View>
       ) : selectedMember ? (
-        <>
-          <Text style={styles.sectionTitle}>Parents</Text>
-          <View style={styles.group}>
-            {parents.length > 0 ? (
-              parents.map((member) => renderMemberCard(member))
-            ) : (
-              <Text style={styles.emptyText}>Aucun parent trouvé</Text>
-            )}
+        <View style={styles.graphArea}>
+          <Text style={styles.groupLabel}>Parents</Text>
+          {renderNodeRow(parents, 'Aucun parent trouvé', true)}
+
+          {parents.length > 0 && (
+            <>
+              <View style={styles.verticalLine} />
+              <View style={[styles.horizontalLine, { width: parentLineWidth }]} />
+              <View style={styles.verticalLine} />
+            </>
+          )}
+
+          <Text style={styles.groupLabel}>Famille proche</Text>
+          <View style={[styles.nodeRow, styles.nodeRowCentered]}>
+            {partners.slice(0, 1).map((member) => renderNode(member))}
+            {renderNode(selectedMember, 'main')}
+            {partners.slice(1).map((member) => renderNode(member))}
           </View>
 
-          <Text style={styles.linkText}>│</Text>
-          <Text style={styles.linkText}>│</Text>
+          {children.length > 0 && (
+            <>
+              <View style={styles.verticalLine} />
+              <View style={[styles.horizontalLine, { width: childLineWidth }]} />
+              <View style={styles.verticalLine} />
+            </>
+          )}
 
-          <Text style={styles.sectionTitle}>Membre central</Text>
-          <View style={styles.group}>
-            {renderMemberCard(selectedMember, 'main')}
-          </View>
-
-          <Text style={styles.sectionTitle}>Conjoint(s)</Text>
-          <View style={styles.group}>
-            {partners.length > 0 ? (
-              partners.map((member) => renderMemberCard(member))
-            ) : (
-              <Text style={styles.emptyText}>Aucun conjoint trouvé</Text>
-            )}
-          </View>
-
-          <Text style={styles.linkText}>│</Text>
-          <Text style={styles.linkText}>│</Text>
-
-          <Text style={styles.sectionTitle}>Enfant(s)</Text>
-          <View style={styles.group}>
-            {children.length > 0 ? (
-              children.map((member) => renderMemberCard(member))
-            ) : (
-              <Text style={styles.emptyText}>Aucun enfant trouvé</Text>
-            )}
-          </View>
-        </>
+          <Text style={styles.groupLabel}>Enfants</Text>
+          {renderNodeRow(children, 'Aucun enfant trouvé', true)}
+        </View>
       ) : (
         <Text style={styles.emptyText}>Aucun membre sélectionné</Text>
       )}
@@ -312,65 +339,106 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B0F1A',
   },
   loaderBlock: {
-    marginTop: 20,
+    marginTop: 24,
     alignItems: 'center',
   },
   title: {
     color: 'white',
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: '#94A3B8',
+    fontSize: 16,
+    marginBottom: 24,
   },
   sectionTitle: {
     color: '#CBD5E1',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  selectorRow: {
-    marginBottom: 8,
+  selectorContent: {
+    paddingBottom: 8,
   },
   selectorButton: {
     backgroundColor: '#1E293B',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginRight: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginRight: 12,
+    minWidth: 180,
   },
   selectorButtonActive: {
     backgroundColor: '#2563EB',
   },
   selectorText: {
     color: 'white',
-    fontWeight: '500',
-  },
-  group: {
-    gap: 10,
-  },
-  memberCard: {
-    borderRadius: 12,
-    padding: 14,
-  },
-  mainMemberCard: {
-    backgroundColor: '#2563EB',
-  },
-  secondaryMemberCard: {
-    backgroundColor: '#1E293B',
-  },
-  memberName: {
-    color: 'white',
-    fontSize: 16,
     fontWeight: '600',
   },
-  linkText: {
-    color: '#94A3B8',
+  graphArea: {
+    marginTop: 20,
+    alignItems: 'center',
+    paddingBottom: 24,
+  },
+  groupLabel: {
+    color: '#CBD5E1',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 14,
+    alignSelf: 'flex-start',
+    width: '100%',
+  },
+  nodeRow: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  nodeRowCentered: {
+    justifyContent: 'center',
+  },
+  node: {
+    width: 210,
+    minHeight: 90,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    justifyContent: 'center',
+  },
+  mainNode: {
+    backgroundColor: '#2563EB',
+    width: 260,
+    minHeight: 100,
+  },
+  secondaryNode: {
+    backgroundColor: '#1E293B',
+  },
+  nodeName: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
     textAlign: 'center',
-    fontSize: 18,
-    marginVertical: 2,
+  },
+  verticalLine: {
+    width: 4,
+    height: 34,
+    backgroundColor: '#475569',
+    borderRadius: 999,
+  },
+  horizontalLine: {
+    height: 4,
+    backgroundColor: '#475569',
+    borderRadius: 999,
   },
   emptyText: {
     color: '#94A3B8',
     fontStyle: 'italic',
+    fontSize: 16,
+    alignSelf: 'flex-start',
+    width: '100%',
+    textAlign: 'center',
+    marginBottom: 16,
   },
 });
