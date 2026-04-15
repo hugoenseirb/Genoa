@@ -56,18 +56,18 @@ export default function MemberDetailScreen() {
   }, [id]);
 
   function confirmDelete() {
-    const confirmed = window.confirm(
-      'Supprimer ce membre ? Cette action est irréversible.'
+    Alert.alert(
+      'Supprimer le membre',
+      'Cette action est irréversible.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: handleDelete },
+      ]
     );
-
-    if (confirmed) {
-      handleDelete();
-    }
   }
 
   async function handleDelete() {
     try {
-      console.log('handleDelete called');
       setDeleting(true);
 
       const token = await AsyncStorage.getItem('token');
@@ -80,7 +80,6 @@ export default function MemberDetailScreen() {
       });
 
       let data: any = null;
-
       try {
         data = await response.json();
       } catch {

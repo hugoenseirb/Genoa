@@ -42,7 +42,6 @@ export default function HomeScreen() {
           <Text style={styles.buttonText}>Ajouter une relation</Text>
         </Pressable>
 
-        {/* BOUTON ARBRE AU BON ENDROIT */}
         <Pressable
           style={({ pressed }) => [
             styles.button,
@@ -65,7 +64,6 @@ export default function HomeScreen() {
           <Text style={styles.buttonText}>Administration</Text>
         </Pressable>
 
-        {/* ESPACE AVANT LOGOUT */}
         <View style={{ height: 16 }} />
 
         <Pressable
