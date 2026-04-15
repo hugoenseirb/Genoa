@@ -24,68 +24,99 @@ type Relation = {
   type: 'couple' | 'parent_child';
   member_a_id: string;
   member_b_id: string;
+  member_a_first_name?: string;
+  member_a_last_name?: string;
+  member_b_first_name?: string;
+  member_b_last_name?: string;
 };
 
 export default function TreeScreen() {
   const [members, setMembers] = useState<Member[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingRelations, setLoadingRelations] = useState(false);
 
-  async function fetchData() {
+  async function fetchMembers() {
     try {
       const token = await AsyncStorage.getItem('token');
 
-      const [membersResponse, relationsResponse] = await Promise.all([
-        fetch(`${API_URL}/members`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch(`${API_URL}/relations`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
+      const response = await fetch(`${API_URL}/members`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      const membersData = await membersResponse.json();
-      const relationsData = await relationsResponse.json();
+      const data = await response.json();
 
-      if (!membersResponse.ok) {
-        throw new Error(membersData.message || 'Erreur chargement membres');
+      if (!response.ok) {
+        throw new Error(data.message || 'Erreur chargement membres');
       }
 
-      if (!relationsResponse.ok) {
-        throw new Error(relationsData.message || 'Erreur chargement relations');
-      }
-
-      if (!Array.isArray(membersData)) {
+      if (!Array.isArray(data)) {
         throw new Error('La réponse members n’est pas une liste');
       }
 
-      if (!Array.isArray(relationsData)) {
-        throw new Error('La réponse relations n’est pas une liste');
-      }
+      setMembers(data);
 
-      setMembers(membersData);
-      setRelations(relationsData);
-
-      if (membersData.length > 0 && !selectedMemberId) {
-        setSelectedMemberId(membersData[0].id);
+      if (data.length > 0) {
+        setSelectedMemberId((prev) => prev ?? data[0].id);
       }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Erreur inconnue';
       Alert.alert('Erreur', message);
+      setMembers([]);
     } finally {
-      setLoading(false);
+      setLoadingMembers(false);
+    }
+  }
+
+  async function fetchRelations(memberId: string) {
+    try {
+      setLoadingRelations(true);
+
+      const token = await AsyncStorage.getItem('token');
+
+      const response = await fetch(
+        `${API_URL}/relations?memberId=${encodeURIComponent(memberId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erreur chargement relations');
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error('La réponse relations n’est pas une liste');
+      }
+
+      setRelations(data);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Erreur inconnue';
+      Alert.alert('Erreur', message);
+      setRelations([]);
+    } finally {
+      setLoadingRelations(false);
     }
   }
 
   useEffect(() => {
-    fetchData();
+    fetchMembers();
   }, []);
+
+  useEffect(() => {
+    if (selectedMemberId) {
+      fetchRelations(selectedMemberId);
+    }
+  }, [selectedMemberId]);
 
   function getMemberById(id: string) {
     return members.find((member) => member.id === id) || null;
@@ -93,46 +124,81 @@ export default function TreeScreen() {
 
   const selectedMember = selectedMemberId ? getMemberById(selectedMemberId) : null;
 
-  const parentIds = relations
+  const parents = relations
     .filter(
       (relation) =>
-        relation.type === 'parent_child' && relation.member_b_id === selectedMemberId
+        relation.type === 'parent_child' &&
+        relation.member_b_id === selectedMemberId
     )
-    .map((relation) => relation.member_a_id);
+    .map((relation) => ({
+      id: relation.member_a_id,
+      first_name:
+        relation.member_a_first_name ||
+        getMemberById(relation.member_a_id)?.first_name ||
+        '',
+      last_name:
+        relation.member_a_last_name ||
+        getMemberById(relation.member_a_id)?.last_name ||
+        '',
+    }));
 
-  const childrenIds = relations
+  const children = relations
     .filter(
       (relation) =>
-        relation.type === 'parent_child' && relation.member_a_id === selectedMemberId
+        relation.type === 'parent_child' &&
+        relation.member_a_id === selectedMemberId
     )
-    .map((relation) => relation.member_b_id);
+    .map((relation) => ({
+      id: relation.member_b_id,
+      first_name:
+        relation.member_b_first_name ||
+        getMemberById(relation.member_b_id)?.first_name ||
+        '',
+      last_name:
+        relation.member_b_last_name ||
+        getMemberById(relation.member_b_id)?.last_name ||
+        '',
+    }));
 
-  const partnerIds = relations
+  const partners = relations
     .filter(
       (relation) =>
         relation.type === 'couple' &&
         (relation.member_a_id === selectedMemberId ||
           relation.member_b_id === selectedMemberId)
     )
-    .map((relation) =>
-      relation.member_a_id === selectedMemberId
-        ? relation.member_b_id
-        : relation.member_a_id
-    );
+    .map((relation) => {
+      const isASelected = relation.member_a_id === selectedMemberId;
 
-  const parents = parentIds
-    .map(getMemberById)
-    .filter((member): member is Member => member !== null);
+      return isASelected
+        ? {
+            id: relation.member_b_id,
+            first_name:
+              relation.member_b_first_name ||
+              getMemberById(relation.member_b_id)?.first_name ||
+              '',
+            last_name:
+              relation.member_b_last_name ||
+              getMemberById(relation.member_b_id)?.last_name ||
+              '',
+          }
+        : {
+            id: relation.member_a_id,
+            first_name:
+              relation.member_a_first_name ||
+              getMemberById(relation.member_a_id)?.first_name ||
+              '',
+            last_name:
+              relation.member_a_last_name ||
+              getMemberById(relation.member_a_id)?.last_name ||
+              '',
+          };
+    });
 
-  const children = childrenIds
-    .map(getMemberById)
-    .filter((member): member is Member => member !== null);
-
-  const partners = partnerIds
-    .map(getMemberById)
-    .filter((member): member is Member => member !== null);
-
-  function renderMemberCard(member: Member, variant: 'main' | 'secondary' = 'secondary') {
+  function renderMemberCard(
+    member: { id: string; first_name: string; last_name: string },
+    variant: 'main' | 'secondary' = 'secondary'
+  ) {
     return (
       <Pressable
         key={member.id}
@@ -145,12 +211,11 @@ export default function TreeScreen() {
         <Text style={styles.memberName}>
           {member.first_name} {member.last_name}
         </Text>
-        <Text style={styles.memberId}>{member.id}</Text>
       </Pressable>
     );
   }
 
-  if (loading) {
+  if (loadingMembers) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color="#2563EB" />
@@ -163,7 +228,11 @@ export default function TreeScreen() {
       <Text style={styles.title}>Arbre simplifié</Text>
 
       <Text style={styles.sectionTitle}>Choix du membre central</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.selectorRow}
+      >
         {members.map((member) => (
           <Pressable
             key={member.id}
@@ -180,7 +249,11 @@ export default function TreeScreen() {
         ))}
       </ScrollView>
 
-      {selectedMember ? (
+      {loadingRelations ? (
+        <View style={styles.loaderBlock}>
+          <ActivityIndicator size="small" color="#2563EB" />
+        </View>
+      ) : selectedMember ? (
         <>
           <Text style={styles.sectionTitle}>Parents</Text>
           <View style={styles.group}>
@@ -238,6 +311,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#0B0F1A',
   },
+  loaderBlock: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
   title: {
     color: 'white',
     fontSize: 28,
@@ -285,11 +362,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
-  },
-  memberId: {
-    color: '#CBD5E1',
-    fontSize: 10,
-    marginTop: 6,
   },
   linkText: {
     color: '#94A3B8',
