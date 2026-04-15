@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -26,21 +27,24 @@ export default function CreateMemberScreen() {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/members`, {
+        const token = await AsyncStorage.getItem('token');
+
+        const response = await fetch(`${API_URL}/members`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
+            first_name: firstName,
+            last_name: lastName,
         }),
-      });
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur création');
+        if (!response.ok) {
+            throw new Error(data.message || 'Erreur création');
       }
 
       router.replace('/members');

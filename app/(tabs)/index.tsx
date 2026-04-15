@@ -42,6 +42,18 @@ export default function HomeScreen() {
           <Text style={styles.buttonText}>Ajouter une relation</Text>
         </Pressable>
 
+        {/* BOUTON ARBRE AU BON ENDROIT */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles.treeButton,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => router.push('/tree')}
+        >
+          <Text style={styles.buttonText}>Visualiser l’arbre</Text>
+        </Pressable>
+
         <Pressable
           style={({ pressed }) => [
             styles.button,
@@ -52,6 +64,9 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>Administration</Text>
         </Pressable>
+
+        {/* ESPACE AVANT LOGOUT */}
+        <View style={{ height: 16 }} />
 
         <Pressable
           style={({ pressed }) => [
@@ -111,12 +126,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  treeButton: {
+    backgroundColor: '#059669',
+  },
   adminButton: {
     backgroundColor: '#7C3AED',
   },
   logoutButton: {
     backgroundColor: '#DC2626',
-    marginBottom: 0,
   },
   buttonPressed: {
     opacity: 0.8,

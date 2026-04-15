@@ -6,9 +6,11 @@ import {
   Pressable,
   Alert,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -29,11 +31,31 @@ export default function CreateRelationScreen() {
 
   async function fetchMembers() {
     try {
-      const response = await fetch(`${API_URL}/members`);
+      const token = await AsyncStorage.getItem('token');
+
+      const response = await fetch(`${API_URL}/members`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erreur chargement membres');
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error('La réponse members n’est pas une liste');
+      }
+
       setMembers(data);
     } catch (error) {
       console.error('Erreur fetch members:', error);
+      const message =
+        error instanceof Error ? error.message : 'Erreur inconnue';
+      Alert.alert('Erreur', message);
+      setMembers([]);
     }
   }
 
@@ -55,6 +77,8 @@ export default function CreateRelationScreen() {
     try {
       setLoading(true);
 
+      const token = await AsyncStorage.getItem('token');
+
       const body =
         type === 'couple'
           ? {
@@ -73,6 +97,7 @@ export default function CreateRelationScreen() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       });
@@ -95,7 +120,7 @@ export default function CreateRelationScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Ajouter une relation</Text>
 
       <Text style={styles.label}>Type</Text>
@@ -161,13 +186,13 @@ export default function CreateRelationScreen() {
           {loading ? 'Création...' : 'Créer la relation'}
         </Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#0B0F1A',
     padding: 20,
   },

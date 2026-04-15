@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Member = {
   id: string;
@@ -24,7 +25,14 @@ export default function MembersScreen() {
 
   async function fetchMembers() {
     try {
-      const response = await fetch(`${API_URL}/members`);
+      const token = await AsyncStorage.getItem('token');
+
+      const response = await fetch(`${API_URL}/members`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await response.json();
       setMembers(data);
     } catch (error) {

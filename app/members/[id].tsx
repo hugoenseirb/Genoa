@@ -5,9 +5,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -23,11 +25,24 @@ export default function MemberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   async function fetchMember() {
     try {
-      const response = await fetch(`${API_URL}/members/${id}`);
+      const token = await AsyncStorage.getItem('token');
+
+      const response = await fetch(`${API_URL}/members/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erreur chargement membre');
+      }
+
       setMember(data);
     } catch (error) {
       console.error('Erreur fetch member:', error);
@@ -39,6 +54,53 @@ export default function MemberDetailScreen() {
   useEffect(() => {
     if (id) fetchMember();
   }, [id]);
+
+  function confirmDelete() {
+    const confirmed = window.confirm(
+      'Supprimer ce membre ? Cette action est irréversible.'
+    );
+
+    if (confirmed) {
+      handleDelete();
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      console.log('handleDelete called');
+      setDeleting(true);
+
+      const token = await AsyncStorage.getItem('token');
+
+      const response = await fetch(`${API_URL}/members/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      let data: any = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Erreur suppression membre');
+      }
+
+      Alert.alert('Succès', 'Membre supprimé');
+      router.replace('/members');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Erreur inconnue';
+      Alert.alert('Erreur', message);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -74,11 +136,19 @@ export default function MemberDetailScreen() {
 
       <Pressable
         style={styles.button}
-        onPress={() =>
-          router.push(`/relations/create?memberId=${member.id}`)
-        }
+        onPress={() => router.push(`/relations/create?memberId=${member.id}`)}
       >
         <Text style={styles.buttonText}>Ajouter une relation</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.button, styles.deleteButton, deleting && styles.buttonDisabled]}
+        onPress={confirmDelete}
+        disabled={deleting}
+      >
+        <Text style={styles.buttonText}>
+          {deleting ? 'Suppression...' : 'Supprimer le membre'}
+        </Text>
       </Pressable>
     </View>
   );
@@ -117,6 +187,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+    marginBottom: 12,
+  },
+  deleteButton: {
+    backgroundColor: '#DC2626',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: 'white',
