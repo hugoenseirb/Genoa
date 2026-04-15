@@ -4,31 +4,45 @@ const { verifyToken, requireEditor } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /relations?memberId=xxx
-// Liste toutes les relations d'un membre
+// GET /relations?memberId=xxx  ou  GET /relations (toutes)
+// Sans memberId : retourne toutes les relations (pour la visualisation de l'arbre)
+// Avec memberId : retourne uniquement les relations d'un membre
 router.get("/", verifyToken, (req, res) => {
   const { memberId } = req.query;
 
-  if (!memberId) {
-    return res.status(400).json({ message: "memberId est requis" });
+  if (memberId) {
+    pool.query(
+      `SELECT r.*,
+         ma.first_name AS member_a_first_name, ma.last_name AS member_a_last_name,
+         mb.first_name AS member_b_first_name, mb.last_name AS member_b_last_name
+       FROM relations r
+       JOIN members ma ON ma.id = r.member_a_id
+       JOIN members mb ON mb.id = r.member_b_id
+       WHERE r.member_a_id = $1 OR r.member_b_id = $1
+       ORDER BY r.created_at`,
+      [memberId]
+    )
+      .then(({ rows }) => res.json(rows))
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+      });
+  } else {
+    pool.query(
+      `SELECT r.*,
+         ma.first_name AS member_a_first_name, ma.last_name AS member_a_last_name,
+         mb.first_name AS member_b_first_name, mb.last_name AS member_b_last_name
+       FROM relations r
+       JOIN members ma ON ma.id = r.member_a_id
+       JOIN members mb ON mb.id = r.member_b_id
+       ORDER BY r.created_at`
+    )
+      .then(({ rows }) => res.json(rows))
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({ message: "Erreur serveur" });
+      });
   }
-
-  pool.query(
-    `SELECT r.*,
-       ma.first_name AS member_a_first_name, ma.last_name AS member_a_last_name,
-       mb.first_name AS member_b_first_name, mb.last_name AS member_b_last_name
-     FROM relations r
-     JOIN members ma ON ma.id = r.member_a_id
-     JOIN members mb ON mb.id = r.member_b_id
-     WHERE r.member_a_id = $1 OR r.member_b_id = $1
-     ORDER BY r.created_at`,
-    [memberId]
-  )
-    .then(({ rows }) => res.json(rows))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: "Erreur serveur" });
-    });
 });
 
 // POST /relations

@@ -42,8 +42,8 @@ export default function RegisterScreen() {
         console.log(data);
 
       // Si premier utilisateur : token direct (admin)
-      if (data.token) {
-        await login(data.token);
+      if (data.token && data.user) {
+        await login(data.token, data.user);
         router.replace('/(tabs)');
         return;
       }

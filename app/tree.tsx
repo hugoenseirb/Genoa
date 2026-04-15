@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,26 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  Dimensions,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import dagre from '@dagrejs/dagre';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
+const NODE_W = 130;
+const NODE_H = 56;
+const PADDING = 60;
+const BAR_GAP = 20; // espace vertical entre noeud parent et barre de couple
+const SIBLING_GAP = 20; // espace vertical entre barre de couple et barre de fratrie
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 type Member = {
   id: string;
   first_name: string;
   last_name: string;
+  gender?: string;
 };
 
 type Relation = {
@@ -24,233 +34,236 @@ type Relation = {
   type: 'couple' | 'parent_child';
   member_a_id: string;
   member_b_id: string;
-  member_a_first_name?: string;
-  member_a_last_name?: string;
-  member_b_first_name?: string;
-  member_b_last_name?: string;
 };
 
-type DisplayMember = {
-  id: string;
-  first_name: string;
-  last_name: string;
+type LayoutNode = Member & { x: number; y: number };
+
+// Une "famille" = un groupe de parents partageant les mêmes enfants
+type FamilyEdge = {
+  kind: 'family';
+  // parents (1 ou 2)
+  parents: LayoutNode[];
+  // tous leurs enfants communs
+  children: LayoutNode[];
+  // y de la barre de couple (sous les parents)
+  coupleBarY: number;
+  // x milieu entre les parents
+  midParentX: number;
+  // y de la barre de fratrie (au-dessus des enfants)
+  siblingBarY: number;
+  // x min et max couvrant tous les enfants
+  siblingBarLeft: number;
+  siblingBarRight: number;
 };
+
+type CoupleEdge = {
+  kind: 'couple';
+  ax: number; ay: number;
+  bx: number; by: number;
+};
+
+type LayoutEdge = FamilyEdge | CoupleEdge;
 
 export default function TreeScreen() {
   const [members, setMembers] = useState<Member[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-  const [loadingRelations, setLoadingRelations] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  async function fetchMembers() {
+  const vertScrollRef = useRef<ScrollView>(null);
+  const horizScrollRef = useRef<ScrollView>(null);
+
+  async function fetchAll() {
     try {
       const token = await AsyncStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-      const response = await fetch(`${API_URL}/members`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const [membersRes, relationsRes] = await Promise.all([
+        fetch(`${API_URL}/members`, { headers }),
+        fetch(`${API_URL}/relations`, { headers }),
+      ]);
 
-      const data = await response.json();
+      const membersData = await membersRes.json();
+      const relationsData = await relationsRes.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur chargement membres');
-      }
+      if (!Array.isArray(membersData)) throw new Error('Erreur chargement membres');
+      if (!Array.isArray(relationsData)) throw new Error('Erreur chargement relations');
 
-      if (!Array.isArray(data)) {
-        throw new Error('La réponse members n’est pas une liste');
-      }
-
-      setMembers(data);
-
-      if (data.length > 0) {
-        setSelectedMemberId((prev) => prev ?? data[0].id);
-      }
+      setMembers(membersData);
+      setRelations(relationsData);
+      if (membersData.length > 0) setSelectedId(membersData[0].id);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Erreur inconnue';
+      const message = error instanceof Error ? error.message : 'Erreur inconnue';
       Alert.alert('Erreur', message);
-      setMembers([]);
     } finally {
-      setLoadingMembers(false);
+      setLoading(false);
     }
   }
 
-  async function fetchRelations(memberId: string) {
-    try {
-      setLoadingRelations(true);
+  useEffect(() => { fetchAll(); }, []);
 
-      const token = await AsyncStorage.getItem('token');
+  const { layoutNodes, layoutEdges, graphW, graphH } = useMemo(() => {
+    if (members.length === 0) {
+      return { layoutNodes: [], layoutEdges: [], graphW: SCREEN_W, graphH: SCREEN_H };
+    }
 
-      const response = await fetch(
-        `${API_URL}/relations?memberId=${encodeURIComponent(memberId)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    // ── Dagre layout ─────────────────────────────────────────────────────────
+    const g = new dagre.graphlib.Graph();
+    g.setGraph({ rankdir: 'TB', nodesep: 60, ranksep: 100, marginx: PADDING, marginy: PADDING });
+    g.setDefaultEdgeLabel(() => ({}));
 
-      const data = await response.json();
+    members.forEach((m) => g.setNode(m.id, { width: NODE_W, height: NODE_H }));
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur chargement relations');
+    relations.forEach((r) => {
+      if (r.type === 'parent_child' && g.hasNode(r.member_a_id) && g.hasNode(r.member_b_id)) {
+        g.setEdge(r.member_a_id, r.member_b_id);
       }
-
-      if (!Array.isArray(data)) {
-        throw new Error('La réponse relations n’est pas une liste');
-      }
-
-      setRelations(data);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Erreur inconnue';
-      Alert.alert('Erreur', message);
-      setRelations([]);
-    } finally {
-      setLoadingRelations(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchMembers();
-  }, []);
-
-  useEffect(() => {
-    if (selectedMemberId) {
-      fetchRelations(selectedMemberId);
-    }
-  }, [selectedMemberId]);
-
-  function getMemberById(id: string) {
-    return members.find((member) => member.id === id) || null;
-  }
-
-  function uniqueMembers(list: DisplayMember[]) {
-    const map = new Map<string, DisplayMember>();
-    list.forEach((member) => {
-      map.set(member.id, member);
     });
-    return Array.from(map.values());
-  }
 
-  const selectedMember = selectedMemberId ? getMemberById(selectedMemberId) : null;
+    dagre.layout(g);
 
-  const parents = useMemo(() => {
-    const values = relations
-      .filter(
-        (relation) =>
-          relation.type === 'parent_child' && relation.member_b_id === selectedMemberId
-      )
-      .map((relation) => ({
-        id: relation.member_a_id,
-        first_name:
-          relation.member_a_first_name ||
-          getMemberById(relation.member_a_id)?.first_name ||
-          '',
-        last_name:
-          relation.member_a_last_name ||
-          getMemberById(relation.member_a_id)?.last_name ||
-          '',
-      }));
+    const layoutNodes: LayoutNode[] = members
+      .filter((m) => g.hasNode(m.id) && g.node(m.id)?.x != null)
+      .map((m) => { const n = g.node(m.id); return { ...m, x: n.x, y: n.y }; });
 
-    return uniqueMembers(values);
-  }, [relations, selectedMemberId, members]);
+    const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
 
-  const children = useMemo(() => {
-    const values = relations
-      .filter(
-        (relation) =>
-          relation.type === 'parent_child' && relation.member_a_id === selectedMemberId
-      )
-      .map((relation) => ({
-        id: relation.member_b_id,
-        first_name:
-          relation.member_b_first_name ||
-          getMemberById(relation.member_b_id)?.first_name ||
-          '',
-        last_name:
-          relation.member_b_last_name ||
-          getMemberById(relation.member_b_id)?.last_name ||
-          '',
-      }));
+    // ── Grouper les enfants par famille (même ensemble de parents) ────────────
+    // childId → parentIds[]
+    const childParents = new Map<string, string[]>();
+    relations.forEach((r) => {
+      if (r.type === 'parent_child') {
+        const list = childParents.get(r.member_b_id) ?? [];
+        list.push(r.member_a_id);
+        childParents.set(r.member_b_id, list);
+      }
+    });
 
-    return uniqueMembers(values);
-  }, [relations, selectedMemberId, members]);
+    // Clé famille = IDs parents triés + jointure
+    const familyMap = new Map<string, { parentIds: string[]; childIds: string[] }>();
+    childParents.forEach((parentIds, childId) => {
+      const key = [...parentIds].sort().join('|');
+      if (!familyMap.has(key)) familyMap.set(key, { parentIds, childIds: [] });
+      familyMap.get(key)!.childIds.push(childId);
+    });
 
-  const partners = useMemo(() => {
-    const values = relations
-      .filter(
-        (relation) =>
-          relation.type === 'couple' &&
-          (relation.member_a_id === selectedMemberId || relation.member_b_id === selectedMemberId)
-      )
-      .map((relation) => {
-        const isASelected = relation.member_a_id === selectedMemberId;
+    // ── Construire les FamilyEdge ─────────────────────────────────────────────
+    const layoutEdges: LayoutEdge[] = [];
 
-        return isASelected
-          ? {
-              id: relation.member_b_id,
-              first_name:
-                relation.member_b_first_name ||
-                getMemberById(relation.member_b_id)?.first_name ||
-                '',
-              last_name:
-                relation.member_b_last_name ||
-                getMemberById(relation.member_b_id)?.last_name ||
-                '',
-            }
-          : {
-              id: relation.member_a_id,
-              first_name:
-                relation.member_a_first_name ||
-                getMemberById(relation.member_a_id)?.first_name ||
-                '',
-              last_name:
-                relation.member_a_last_name ||
-                getMemberById(relation.member_a_id)?.last_name ||
-                '',
-            };
+    familyMap.forEach(({ parentIds, childIds }) => {
+      const parents = parentIds.map((id) => nodeMap.get(id)).filter(Boolean) as LayoutNode[];
+      const children = childIds.map((id) => nodeMap.get(id)).filter(Boolean) as LayoutNode[];
+      if (parents.length === 0 || children.length === 0) return;
+
+      const maxParentY = Math.max(...parents.map((p) => p.y));
+      const coupleBarY = maxParentY + NODE_H / 2 + BAR_GAP;
+
+      const minParentX = Math.min(...parents.map((p) => p.x));
+      const maxParentX = Math.max(...parents.map((p) => p.x));
+      const midParentX = (minParentX + maxParentX) / 2;
+
+      const minChildY = Math.min(...children.map((c) => c.y));
+      const childTopY = minChildY - NODE_H / 2;
+      const siblingBarY = coupleBarY + SIBLING_GAP + (childTopY - coupleBarY - SIBLING_GAP) / 2;
+
+      const allChildX = children.map((c) => c.x);
+      // La barre de fratrie couvre du plus à gauche au plus à droite des enfants
+      // mais au minimum depuis le midParentX
+      const siblingBarLeft = Math.min(midParentX, ...allChildX);
+      const siblingBarRight = Math.max(midParentX, ...allChildX);
+
+      layoutEdges.push({
+        kind: 'family',
+        parents,
+        children,
+        coupleBarY,
+        midParentX,
+        siblingBarY,
+        siblingBarLeft,
+        siblingBarRight,
+      });
+    });
+
+    // ── Arêtes couple (tirets roses) ─────────────────────────────────────────
+    relations
+      .filter((r) => r.type === 'couple')
+      .forEach((r) => {
+        const a = nodeMap.get(r.member_a_id);
+        const b = nodeMap.get(r.member_b_id);
+        if (!a || !b) return;
+        const left = a.x <= b.x ? a : b;
+        const right = a.x <= b.x ? b : a;
+        layoutEdges.push({
+          kind: 'couple',
+          ax: left.x + NODE_W / 2, ay: left.y,
+          bx: right.x - NODE_W / 2, by: right.y,
+        });
       });
 
-    return uniqueMembers(values);
-  }, [relations, selectedMemberId, members]);
+    const info = g.graph();
+    return {
+      layoutNodes,
+      layoutEdges,
+      graphW: Math.max((info.width ?? SCREEN_W) + PADDING * 2, SCREEN_W),
+      graphH: Math.max((info.height ?? SCREEN_H) + PADDING * 2, SCREEN_H),
+    };
+  }, [members, relations]);
 
-  function renderNode(member: DisplayMember, variant: 'main' | 'secondary' = 'secondary') {
-    return (
-      <Pressable
-        key={member.id}
-        style={[
-          styles.node,
-          variant === 'main' ? styles.mainNode : styles.secondaryNode,
-        ]}
-        onPress={() => setSelectedMemberId(member.id)}
-      >
-        <Text style={styles.nodeName} numberOfLines={2}>
-          {member.first_name} {member.last_name}
-        </Text>
-      </Pressable>
-    );
+  // Centrage initial
+  useEffect(() => {
+    if (layoutNodes.length === 0) return;
+    const target = layoutNodes.find((n) => n.id === selectedId) ?? layoutNodes[0];
+    const t = setTimeout(() => {
+      vertScrollRef.current?.scrollTo({ y: Math.max(0, target.y - SCREEN_H / 2), animated: false });
+      horizScrollRef.current?.scrollTo({ x: Math.max(0, target.x - SCREEN_W / 2), animated: false });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [layoutNodes]);
+
+  function scrollToNode(id: string) {
+    const node = layoutNodes.find((n) => n.id === id);
+    if (!node) return;
+    vertScrollRef.current?.scrollTo({ y: Math.max(0, node.y - SCREEN_H / 2), animated: true });
+    horizScrollRef.current?.scrollTo({ x: Math.max(0, node.x - SCREEN_W / 2), animated: true });
   }
 
-  function renderNodeRow(items: DisplayMember[], emptyText: string, centered = false) {
-    if (items.length === 0) {
-      return <Text style={styles.emptyText}>{emptyText}</Text>;
+  function handleNodePress(id: string) {
+    setSelectedId(id);
+    scrollToNode(id);
+  }
+
+  // Génère le chemin SVG d'une FamilyEdge
+  function familyPath(e: FamilyEdge): string {
+    const parts: string[] = [];
+
+    // 1. Chaque parent descend verticalement jusqu'à coupleBarY
+    e.parents.forEach((p) => {
+      parts.push(`M${p.x},${p.y + NODE_H / 2} L${p.x},${e.coupleBarY}`);
+    });
+
+    // 2. Barre horizontale reliant les parents (si 2 parents)
+    if (e.parents.length >= 2) {
+      const xs = e.parents.map((p) => p.x);
+      parts.push(`M${Math.min(...xs)},${e.coupleBarY} L${Math.max(...xs)},${e.coupleBarY}`);
     }
 
-    return (
-      <View style={[styles.nodeRow, centered && styles.nodeRowCentered]}>
-        {items.map((member) => renderNode(member))}
-      </View>
-    );
+    // 3. Trait vertical depuis milieu parents → barre de fratrie
+    parts.push(`M${e.midParentX},${e.coupleBarY} L${e.midParentX},${e.siblingBarY}`);
+
+    // 4. Barre de fratrie horizontale (couvre tous les enfants)
+    if (e.children.length > 1 || e.midParentX !== e.children[0]?.x) {
+      parts.push(`M${e.siblingBarLeft},${e.siblingBarY} L${e.siblingBarRight},${e.siblingBarY}`);
+    }
+
+    // 5. Chaque enfant remonte depuis la barre de fratrie
+    e.children.forEach((c) => {
+      parts.push(`M${c.x},${e.siblingBarY} L${c.x},${c.y - NODE_H / 2}`);
+    });
+
+    return parts.join(' ');
   }
 
-  const parentLineWidth = Math.max(70, Math.min(parents.length * 140, 520));
-  const childLineWidth = Math.max(70, Math.min(children.length * 140, 520));
-
-  if (loadingMembers) {
+  if (loading) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color="#2563EB" />
@@ -258,187 +271,114 @@ export default function TreeScreen() {
     );
   }
 
+  if (members.length === 0) {
+    return (
+      <View style={styles.loader}>
+        <Text style={styles.emptyText}>Aucun membre dans l'arbre</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Arbre</Text>
-      <Text style={styles.subtitle}>Vue graphe simplifiée</Text>
-
-      <Text style={styles.sectionTitle}>Choix du membre central</Text>
+    <View style={styles.container}>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.selectorContent}
+        ref={vertScrollRef}
+        contentContainerStyle={{ height: graphH }}
+        showsVerticalScrollIndicator={false}
       >
-        {members.map((member) => (
-          <Pressable
-            key={member.id}
-            style={[
-              styles.selectorButton,
-              selectedMemberId === member.id && styles.selectorButtonActive,
-            ]}
-            onPress={() => setSelectedMemberId(member.id)}
-          >
-            <Text style={styles.selectorText} numberOfLines={1}>
-              {member.first_name} {member.last_name}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+        <ScrollView
+          ref={horizScrollRef}
+          horizontal
+          contentContainerStyle={{ width: graphW }}
+          showsHorizontalScrollIndicator={false}
+        >
+          <View style={{ width: graphW, height: graphH }}>
 
-      {loadingRelations ? (
-        <View style={styles.loaderBlock}>
-          <ActivityIndicator size="small" color="#2563EB" />
-        </View>
-      ) : selectedMember ? (
-        <View style={styles.graphArea}>
-          <Text style={styles.groupLabel}>Parents</Text>
-          {renderNodeRow(parents, 'Aucun parent trouvé', true)}
+            <Svg width={graphW} height={graphH} style={StyleSheet.absoluteFill} pointerEvents="none">
+              {layoutEdges.map((edge, i) => {
+                if (edge.kind === 'family') {
+                  return (
+                    <Path
+                      key={i}
+                      d={familyPath(edge)}
+                      stroke="#475569"
+                      strokeWidth={2}
+                      fill="none"
+                    />
+                  );
+                }
+                // couple
+                return (
+                  <Path
+                    key={i}
+                    d={`M${edge.ax},${edge.ay} L${edge.bx},${edge.by}`}
+                    stroke="#EC4899"
+                    strokeWidth={2}
+                    strokeDasharray="6,4"
+                    fill="none"
+                  />
+                );
+              })}
+            </Svg>
 
-          {parents.length > 0 && (
-            <>
-              <View style={styles.verticalLine} />
-              <View style={[styles.horizontalLine, { width: parentLineWidth }]} />
-              <View style={styles.verticalLine} />
-            </>
-          )}
+            {layoutNodes.map((node) => {
+              const isSelected = node.id === selectedId;
+              return (
+                <Pressable
+                  key={node.id}
+                  style={[
+                    styles.node,
+                    isSelected && styles.nodeSelected,
+                    { left: node.x - NODE_W / 2, top: node.y - NODE_H / 2 },
+                  ]}
+                  onPress={() => handleNodePress(node.id)}
+                >
+                  <Text style={styles.nodeFirstName} numberOfLines={1}>
+                    {node.first_name}
+                  </Text>
+                  <Text style={styles.nodeLastName} numberOfLines={1}>
+                    {node.last_name}
+                  </Text>
+                </Pressable>
+              );
+            })}
 
-          <Text style={styles.groupLabel}>Famille proche</Text>
-          <View style={[styles.nodeRow, styles.nodeRowCentered]}>
-            {partners.slice(0, 1).map((member) => renderNode(member))}
-            {renderNode(selectedMember, 'main')}
-            {partners.slice(1).map((member) => renderNode(member))}
           </View>
-
-          {children.length > 0 && (
-            <>
-              <View style={styles.verticalLine} />
-              <View style={[styles.horizontalLine, { width: childLineWidth }]} />
-              <View style={styles.verticalLine} />
-            </>
-          )}
-
-          <Text style={styles.groupLabel}>Enfants</Text>
-          {renderNodeRow(children, 'Aucun enfant trouvé', true)}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>Aucun membre sélectionné</Text>
-      )}
-    </ScrollView>
+        </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#0B0F1A',
-    padding: 20,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#0B0F1A',
-  },
-  loaderBlock: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  title: {
-    color: 'white',
-    fontSize: 34,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: '#94A3B8',
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    color: '#CBD5E1',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  selectorContent: {
-    paddingBottom: 8,
-  },
-  selectorButton: {
-    backgroundColor: '#1E293B',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginRight: 12,
-    minWidth: 180,
-  },
-  selectorButtonActive: {
-    backgroundColor: '#2563EB',
-  },
-  selectorText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  graphArea: {
-    marginTop: 20,
-    alignItems: 'center',
-    paddingBottom: 24,
-  },
-  groupLabel: {
-    color: '#CBD5E1',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 14,
-    alignSelf: 'flex-start',
-    width: '100%',
-  },
-  nodeRow: {
-    width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-  },
-  nodeRowCentered: {
-    justifyContent: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#0B0F1A' },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B0F1A' },
+  emptyText: { color: '#94A3B8', fontSize: 16 },
   node: {
-    width: 210,
-    minHeight: 90,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    justifyContent: 'center',
-  },
-  mainNode: {
-    backgroundColor: '#2563EB',
-    width: 260,
-    minHeight: 100,
-  },
-  secondaryNode: {
+    position: 'absolute',
+    width: NODE_W,
+    height: NODE_H,
+    borderRadius: 12,
     backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  nodeName: {
+  nodeSelected: {
+    backgroundColor: '#2563EB',
+    borderColor: '#93C5FD',
+  },
+  nodeFirstName: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
   },
-  verticalLine: {
-    width: 4,
-    height: 34,
-    backgroundColor: '#475569',
-    borderRadius: 999,
-  },
-  horizontalLine: {
-    height: 4,
-    backgroundColor: '#475569',
-    borderRadius: 999,
-  },
-  emptyText: {
-    color: '#94A3B8',
-    fontStyle: 'italic',
-    fontSize: 16,
-    alignSelf: 'flex-start',
-    width: '100%',
+  nodeLastName: {
+    color: '#CBD5E1',
+    fontSize: 11,
     textAlign: 'center',
-    marginBottom: 16,
   },
 });

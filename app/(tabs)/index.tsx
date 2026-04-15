@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 
@@ -11,9 +11,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>GENOA</Text>
-      <Text style={styles.subtitle}>Gestion d’arbre généalogique</Text>
+      <Text style={styles.subtitle}>Gestion d'arbre genealogique</Text>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Accueil</Text>
@@ -43,22 +43,28 @@ export default function HomeScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.treeButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={() => router.push('/tree')}
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          onPress={() => router.push('/search')}
         >
-          <Text style={styles.buttonText}>Visualiser l’arbre</Text>
+          <Text style={styles.buttonText}>Rechercher un membre</Text>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.adminButton,
-            pressed && styles.buttonPressed,
-          ]}
+          style={({ pressed }) => [styles.button, styles.treeButton, pressed && styles.buttonPressed]}
+          onPress={() => router.push('/tree')}
+        >
+          <Text style={styles.buttonText}>Visualiser l'arbre</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.button, styles.statsButton, pressed && styles.buttonPressed]}
+          onPress={() => router.push('/stats')}
+        >
+          <Text style={styles.buttonText}>Statistiques</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.button, styles.adminButton, pressed && styles.buttonPressed]}
           onPress={() => router.push('/admin')}
         >
           <Text style={styles.buttonText}>Administration</Text>
@@ -67,17 +73,20 @@ export default function HomeScreen() {
         <View style={{ height: 16 }} />
 
         <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            styles.logoutButton,
-            pressed && styles.buttonPressed,
-          ]}
+          style={({ pressed }) => [styles.button, styles.profileButton, pressed && styles.buttonPressed]}
+          onPress={() => router.push('/profile')}
+        >
+          <Text style={styles.buttonText}>Mon profil</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.button, styles.logoutButton, pressed && styles.buttonPressed]}
           onPress={handleLogout}
         >
-          <Text style={styles.buttonText}>Se déconnecter</Text>
+          <Text style={styles.buttonText}>Se deconnecter</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -85,8 +94,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0B0F1A',
+  },
+  content: {
     paddingHorizontal: 24,
-    justifyContent: 'center',
+    paddingVertical: 40,
   },
   title: {
     fontSize: 34,
@@ -127,8 +138,14 @@ const styles = StyleSheet.create({
   treeButton: {
     backgroundColor: '#059669',
   },
+  statsButton: {
+    backgroundColor: '#0891B2',
+  },
   adminButton: {
     backgroundColor: '#7C3AED',
+  },
+  profileButton: {
+    backgroundColor: '#475569',
   },
   logoutButton: {
     backgroundColor: '#DC2626',

@@ -20,7 +20,7 @@ router.post("/register", (req, res) => {
   pool.query("SELECT COUNT(*) FROM users")
     .then(({ rows }) => {
       const isFirst = parseInt(rows[0].count) === 0;
-      const role = isFirst ? "admin" : "reader";
+      const role = isFirst ? "admin" : "editor";
       const status = isFirst ? "active" : "pending";
 
       return bcrypt.hash(password, 10).then((hashedPassword) => {

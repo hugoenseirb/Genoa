@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -22,9 +24,26 @@ type User = {
 };
 
 export default function AdminScreen() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  if (user && user.role !== 'admin') {
+    return (
+      <View style={styles.loader}>
+        <Text style={{ color: '#DC2626', fontSize: 16, textAlign: 'center' }}>
+          Acces refuse. Vous devez etre administrateur.
+        </Text>
+        <Pressable
+          style={{ marginTop: 20, padding: 14, backgroundColor: '#1E293B', borderRadius: 10 }}
+          onPress={() => router.replace('/(tabs)')}
+        >
+          <Text style={{ color: 'white', textAlign: 'center' }}>Retour</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   async function fetchPendingUsers() {
     try {
@@ -91,11 +110,19 @@ export default function AdminScreen() {
   }
 
   async function handleDelete(userId: string) {
-    const confirmed = window.confirm(
-      'Supprimer cet utilisateur ? Cette action est irréversible.'
-    );
+    return new Promise<void>((resolve) => {
+      Alert.alert(
+        'Supprimer cet utilisateur ?',
+        'Cette action est irréversible.',
+        [
+          { text: 'Annuler', style: 'cancel', onPress: () => resolve() },
+          { text: 'Supprimer', style: 'destructive', onPress: () => doDelete(userId).then(resolve) },
+        ]
+      );
+    });
+  }
 
-    if (!confirmed) return;
+  async function doDelete(userId: string) {
 
     try {
       setActionLoadingId(userId);

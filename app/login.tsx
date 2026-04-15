@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
       const data = await loginRequest(email, password);
 
-      await login(data.token);
+      await login(data.token, data.user);
       router.replace('/(tabs)');
     } catch (error) {
       const message =
