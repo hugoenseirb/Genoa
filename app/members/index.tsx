@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
+import ScreenWrapper from "@/components/ScreenWrapper";
 
 type Member = {
   id: string;
@@ -96,39 +97,42 @@ export default function MembersScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Membres</Text>
+    <ScreenWrapper>
+      <View style={styles.container}>
+        <Text style={styles.title}>Membres</Text>
 
-      <FlatList
-        data={members}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
+        <FlatList
+          data={members}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        />
 
-      <Pressable
-        style={styles.button}
-        onPress={() => router.push("/members/create")}
-      >
-        <Text style={styles.buttonText}>+ Ajouter un membre</Text>
-      </Pressable>
-    </View>
+        <Pressable
+          style={styles.button}
+          onPress={() => router.push("/members/create")}
+        >
+          <Text style={styles.buttonText}>+ Ajouter un membre</Text>
+        </Pressable>
+      </View>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0B0F1A",
     paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingTop: 20,
   },
   title: {
     color: "white",
@@ -181,6 +185,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
+    marginBottom: 10,
   },
   buttonText: {
     color: "white",
@@ -189,6 +194,5 @@ const styles = StyleSheet.create({
   loader: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "#0B0F1A",
   },
 });

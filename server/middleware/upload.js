@@ -4,7 +4,6 @@ const fs = require("fs");
 
 const uploadDir = process.env.UPLOAD_DIR || "./uploads";
 
-// Crée le dossier uploads s'il n'existe pas
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -20,7 +19,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+  const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"];
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -31,7 +30,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 module.exports = upload;

@@ -4,24 +4,19 @@ const { verifyToken } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /stats
-// Statistiques globales de l'arbre généalogique
 router.get("/", verifyToken, (req, res) => {
-
   const totalMembers = pool.query("SELECT COUNT(*) FROM members");
 
   const genderCount = pool.query(
     "SELECT gender, COUNT(*) FROM members GROUP BY gender"
   );
 
-  // Espérance de vie moyenne sur les membres décédés ayant une date de naissance et de décès
   const lifeExpectancy = pool.query(
     `SELECT ROUND(AVG(EXTRACT(YEAR FROM AGE(death_date, birth_date))), 1) AS avg_life_expectancy
      FROM members
      WHERE death_date IS NOT NULL AND birth_date IS NOT NULL`
   );
 
-  // Nombre moyen d'enfants par membre ayant au moins un enfant
   const avgChildren = pool.query(
     `SELECT ROUND(AVG(child_count), 2) AS avg_children_per_parent
      FROM (
@@ -32,18 +27,14 @@ router.get("/", verifyToken, (req, res) => {
      ) AS parent_counts`
   );
 
-  // Nombre de générations = profondeur max de l'arbre via CTE récursif
   const generations = pool.query(
     `WITH RECURSIVE gen AS (
-       -- Membres sans parents = génération 1
        SELECT m.id, 1 AS generation
        FROM members m
        WHERE m.id NOT IN (
          SELECT member_b_id FROM relations WHERE type = 'parent_child'
        )
-
        UNION
-
        SELECT r.member_b_id AS id, g.generation + 1
        FROM relations r
        JOIN gen g ON r.member_a_id = g.id
@@ -52,14 +43,12 @@ router.get("/", verifyToken, (req, res) => {
      SELECT MAX(generation) AS total_generations FROM gen`
   );
 
-  // Nombre de couples
   const couples = pool.query(
     "SELECT COUNT(*) FROM relations WHERE type = 'couple'"
   );
 
   Promise.all([totalMembers, genderCount, lifeExpectancy, avgChildren, generations, couples])
     .then(([totalRes, genderRes, lifeRes, avgChildRes, genRes, couplesRes]) => {
-      // Transforme le tableau gender en objet { male: x, female: y, ... }
       const genderMap = {};
       genderRes.rows.forEach((row) => {
         genderMap[row.gender || "unknown"] = parseInt(row.count);

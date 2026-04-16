@@ -4,9 +4,6 @@ const { verifyToken, requireEditor } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /relations?memberId=xxx  ou  GET /relations (toutes)
-// Sans memberId : retourne toutes les relations (pour la visualisation de l'arbre)
-// Avec memberId : retourne uniquement les relations d'un membre
 router.get("/", verifyToken, (req, res) => {
   const { memberId } = req.query;
 
@@ -45,8 +42,6 @@ router.get("/", verifyToken, (req, res) => {
   }
 });
 
-// POST /relations
-// Créer une relation entre deux membres (couple ou parent-enfant)
 router.post("/", verifyToken, requireEditor, (req, res) => {
   const { type, member_a_id, member_b_id, union_date, separation_date, union_type, filiation_type } = req.body;
 
@@ -63,14 +58,12 @@ router.post("/", verifyToken, requireEditor, (req, res) => {
     return res.status(400).json({ message: "Un membre ne peut pas avoir une relation avec lui-même" });
   }
 
-  // Vérifie que les deux membres existent
   pool.query("SELECT id FROM members WHERE id = ANY($1)", [[member_a_id, member_b_id]])
     .then(({ rows }) => {
       if (rows.length < 2) {
         return res.status(404).json({ message: "Un ou plusieurs membres introuvables" });
       }
 
-      // Vérifie qu'une relation identique n'existe pas déjà
       return pool.query(
         `SELECT id FROM relations
          WHERE type = $1
@@ -79,14 +72,12 @@ router.post("/", verifyToken, requireEditor, (req, res) => {
       );
     })
     .then((result) => {
-      // result est undefined si on a retourné une réponse 404 plus haut
       if (!result) return;
 
       if (result.rows.length > 0) {
         return res.status(409).json({ message: "Cette relation existe déjà" });
       }
 
-      // Pour parent_child : vérifie qu'un enfant ne devient pas son propre ancêtre (cycle)
       if (type === "parent_child") {
         return checkCycle(member_b_id, member_a_id).then((hasCycle) => {
           if (hasCycle) {
@@ -104,8 +95,6 @@ router.post("/", verifyToken, requireEditor, (req, res) => {
     });
 });
 
-// Vérifie qu'en ajoutant parent→enfant on ne crée pas un cycle
-// (un descendant de l'enfant ne doit pas être déjà ancêtre du parent)
 function checkCycle(childId, parentId) {
   return pool.query(
     `WITH RECURSIVE descendants AS (
@@ -127,8 +116,6 @@ function insertRelation(res, type, member_a_id, member_b_id, union_date, separat
   ).then(({ rows }) => res.status(201).json(rows[0]));
 }
 
-// DELETE /relations/:id
-// Supprimer une relation
 router.delete("/:id", verifyToken, requireEditor, (req, res) => {
   pool.query("DELETE FROM relations WHERE id = $1 RETURNING id", [req.params.id])
     .then(({ rows }) => {

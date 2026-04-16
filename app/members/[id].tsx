@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import ScreenWrapper from "@/components/ScreenWrapper";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -131,9 +132,11 @@ export default function MemberDetailScreen() {
     }
   }
 
-  useEffect(() => {
-    if (memberId) fetchAll();
-  }, [memberId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (memberId) fetchAll();
+    }, [memberId])
+  );
 
   async function handleDeleteMember() {
     setDeleting(true);
@@ -208,17 +211,21 @@ export default function MemberDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
   if (!member) {
     return (
-      <View style={styles.loader}>
+      <ScreenWrapper>
+        <View style={styles.loader}>
         <Text style={styles.error}>Membre introuvable</Text>
-      </View>
+        </View>
+      </ScreenWrapper>
     );
   }
 
@@ -227,9 +234,15 @@ export default function MemberDetailScreen() {
   const photoSrc = buildPhotoUrl(member.photo_url);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenWrapper noBottomInset>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
       {photoSrc ? (
-        <Image source={{ uri: photoSrc }} style={styles.photo} />
+        <Image
+          key={photoSrc}
+          source={{ uri: photoSrc }}
+          style={styles.photo}
+          resizeMode="cover"
+        />
       ) : (
         <View style={styles.photoPlaceholder}>
           <Text style={styles.photoPlaceholderText}>Aucune photo</Text>
@@ -408,6 +421,7 @@ export default function MemberDetailScreen() {
         )}
       </View>
     </ScrollView>
+    </ScreenWrapper>
   );
 }
 

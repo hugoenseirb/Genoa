@@ -26,10 +26,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         transports: ['websocket'],
       });
 
-      socket.on('connect', () => {
-        console.log('Socket connecte :', socket.id);
-      });
-
       socket.on('connect_error', (err) => {
         console.warn('Socket erreur :', err.message);
       });

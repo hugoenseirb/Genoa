@@ -5,9 +5,6 @@ const { verifyToken, requireEditor } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /members
-// Liste tous les membres. Les données privées sont masquées pour les lecteurs.
-// Recherche par nom/prénom via ?q=
 router.get("/", verifyToken, (req, res) => {
   const { q } = req.query;
   const isEditor = req.user.role === "admin" || req.user.role === "editor";
@@ -27,7 +24,6 @@ router.get("/", verifyToken, (req, res) => {
       ORDER BY last_name, first_name
     `;
 
-    // Requête simplifiée avec la logique de visibilité
     if (isEditor) {
       query = `
         SELECT id, first_name, last_name, gender, birth_date, birth_place,
@@ -77,8 +73,6 @@ router.get("/", verifyToken, (req, res) => {
     });
 });
 
-// GET /members/:id
-// Détail d'un membre. Les champs privés sont masqués pour les lecteurs.
 router.get("/:id", verifyToken, (req, res) => {
   const isEditor = req.user.role === "admin" || req.user.role === "editor";
 
@@ -98,7 +92,6 @@ router.get("/:id", verifyToken, (req, res) => {
         return res.status(404).json({ message: "Membre introuvable" });
       }
       const member = rows[0];
-      // Si le membre est privé et que l'utilisateur est lecteur, on masque les champs sensibles
       if (member.is_private && !isEditor && req.user.id !== member.created_by) {
         member.contacts = null;
         member.notes_public = null;
@@ -111,8 +104,6 @@ router.get("/:id", verifyToken, (req, res) => {
     });
 });
 
-// POST /members
-// Créer un nouveau membre de la famille
 router.post("/", verifyToken, requireEditor, (req, res) => {
   const {
     first_name, last_name, gender, birth_date, birth_place,
@@ -146,8 +137,6 @@ router.post("/", verifyToken, requireEditor, (req, res) => {
     });
 });
 
-// PUT /members/:id
-// Modifier un membre existant
 router.put("/:id", verifyToken, requireEditor, (req, res) => {
   const {
     first_name, last_name, gender, birth_date, birth_place,
@@ -187,8 +176,6 @@ router.put("/:id", verifyToken, requireEditor, (req, res) => {
     });
 });
 
-// DELETE /members/:id
-// Supprimer un membre
 router.delete("/:id", verifyToken, requireEditor, (req, res) => {
   pool.query("DELETE FROM members WHERE id = $1 RETURNING id", [req.params.id])
     .then(({ rows }) => {
@@ -203,8 +190,6 @@ router.delete("/:id", verifyToken, requireEditor, (req, res) => {
     });
 });
 
-// POST /members/:id/photo
-// Upload de la photo d'un membre
 router.post("/:id/photo", verifyToken, requireEditor, upload.single("photo"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "Aucun fichier envoyé" });

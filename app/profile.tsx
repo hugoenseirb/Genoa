@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/context/AuthContext';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -84,9 +85,11 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
@@ -102,46 +105,48 @@ export default function ProfileScreen() {
     : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Mon profil</Text>
+    <ScreenWrapper noBottomInset>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Mon profil</Text>
 
-      {profile ? (
-        <>
-          <View style={styles.card}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarLetter}>
-                {profile.username.charAt(0).toUpperCase()}
-              </Text>
+        {profile ? (
+          <>
+            <View style={styles.card}>
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarLetter}>
+                  {profile.username.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <Text style={styles.username}>{profile.username}</Text>
+              <Text style={styles.email}>{profile.email}</Text>
+              <View style={[styles.roleBadge, { backgroundColor: roleColor + '22', borderColor: roleColor }]}>
+                <Text style={[styles.roleText, { color: roleColor }]}>{roleLabel}</Text>
+              </View>
             </View>
-            <Text style={styles.username}>{profile.username}</Text>
-            <Text style={styles.email}>{profile.email}</Text>
-            <View style={[styles.roleBadge, { backgroundColor: roleColor + '22', borderColor: roleColor }]}>
-              <Text style={[styles.roleText, { color: roleColor }]}>{roleLabel}</Text>
+
+            <View style={styles.infoCard}>
+              <InfoRow label="Statut" value={profile.status === 'active' ? 'Actif' : profile.status} />
+              {joinDate && <InfoRow label="Membre depuis" value={joinDate} />}
             </View>
-          </View>
 
-          <View style={styles.infoCard}>
-            <InfoRow label="Statut" value={profile.status === 'active' ? 'Actif' : profile.status} />
-            {joinDate && <InfoRow label="Membre depuis" value={joinDate} />}
-          </View>
+            {profile.role === 'admin' && (
+              <Pressable
+                style={styles.adminBtn}
+                onPress={() => router.push('/admin')}
+              >
+                <Text style={styles.adminBtnText}>Espace Administration</Text>
+              </Pressable>
+            )}
+          </>
+        ) : (
+          <Text style={styles.errorText}>Profil introuvable</Text>
+        )}
 
-          {profile.role === 'admin' && (
-            <Pressable
-              style={styles.adminBtn}
-              onPress={() => router.push('/admin')}
-            >
-              <Text style={styles.adminBtnText}>Espace Administration</Text>
-            </Pressable>
-          )}
-        </>
-      ) : (
-        <Text style={styles.errorText}>Profil introuvable</Text>
-      )}
-
-      <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Se déconnecter</Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Se déconnecter</Text>
+        </Pressable>
+      </ScrollView>
+    </ScreenWrapper>
   );
 }
 
@@ -155,10 +160,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0B0F1A',
-  },
   content: {
     padding: 20,
     paddingBottom: 40,
@@ -167,7 +168,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0B0F1A',
   },
   title: {
     color: 'white',

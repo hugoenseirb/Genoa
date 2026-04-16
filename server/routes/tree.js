@@ -4,8 +4,6 @@ const { verifyToken } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /tree/ancestors/:memberId
-// Tous les ancêtres d'un membre via CTE récursif
 router.get("/ancestors/:memberId", verifyToken, (req, res) => {
   const isEditor = req.user.role === "admin" || req.user.role === "editor";
   const memberFields = isEditor
@@ -14,14 +12,10 @@ router.get("/ancestors/:memberId", verifyToken, (req, res) => {
 
   pool.query(
     `WITH RECURSIVE ancestors AS (
-       -- Point de départ : parents directs
        SELECT r.member_a_id AS id, 1 AS generation
        FROM relations r
        WHERE r.member_b_id = $1 AND r.type = 'parent_child'
-
        UNION
-
-       -- Remonte récursivement
        SELECT r.member_a_id AS id, a.generation + 1
        FROM relations r
        JOIN ancestors a ON r.member_b_id = a.id
@@ -40,8 +34,6 @@ router.get("/ancestors/:memberId", verifyToken, (req, res) => {
     });
 });
 
-// GET /tree/descendants/:memberId
-// Tous les descendants d'un membre via CTE récursif
 router.get("/descendants/:memberId", verifyToken, (req, res) => {
   const isEditor = req.user.role === "admin" || req.user.role === "editor";
   const memberFields = isEditor
@@ -50,14 +42,10 @@ router.get("/descendants/:memberId", verifyToken, (req, res) => {
 
   pool.query(
     `WITH RECURSIVE descendants AS (
-       -- Point de départ : enfants directs
        SELECT r.member_b_id AS id, 1 AS generation
        FROM relations r
        WHERE r.member_a_id = $1 AND r.type = 'parent_child'
-
        UNION
-
-       -- Descend récursivement
        SELECT r.member_b_id AS id, d.generation + 1
        FROM relations r
        JOIN descendants d ON r.member_a_id = d.id
@@ -76,15 +64,12 @@ router.get("/descendants/:memberId", verifyToken, (req, res) => {
     });
 });
 
-// GET /tree/siblings/:memberId
-// Fratrie d'un membre (même parent)
 router.get("/siblings/:memberId", verifyToken, (req, res) => {
   pool.query(
     `SELECT m.id, m.first_name, m.last_name, m.gender, m.birth_date, m.death_date, m.photo_url
      FROM members m
      WHERE m.id != $1
        AND m.id IN (
-         -- Tous les enfants des parents du membre
          SELECT r2.member_b_id
          FROM relations r1
          JOIN relations r2 ON r1.member_a_id = r2.member_a_id
@@ -102,9 +87,6 @@ router.get("/siblings/:memberId", verifyToken, (req, res) => {
     });
 });
 
-// GET /tree/:memberId
-// Retourne le sous-graphe autour d'un membre : lui-même + parents + enfants + conjoints
-// Paramètres optionnels : ?depth=1 (profondeur) &direction=all|ancestors|descendants
 router.get("/:memberId", verifyToken, (req, res) => {
   const { memberId } = req.params;
   const direction = req.query.direction || "all";
@@ -114,7 +96,6 @@ router.get("/:memberId", verifyToken, (req, res) => {
     ? "id, first_name, last_name, gender, birth_date, death_date, photo_url, is_private, notes_public, notes_private, contacts, professions"
     : "id, first_name, last_name, gender, birth_date, death_date, photo_url, is_private, notes_public";
 
-  // On récupère le membre central, ses parents, ses enfants et ses conjoints en 3 requêtes parallèles
   const getMember = pool.query(`SELECT ${memberFields} FROM members WHERE id = $1`, [memberId]);
 
   const getParents = pool.query(

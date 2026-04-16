@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 
-// Vérifie le JWT et attache req.user — inspiré du verifyToken de TP3
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -35,7 +34,6 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Vérifie que l'utilisateur a bien un des rôles requis
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {

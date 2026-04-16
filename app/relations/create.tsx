@@ -11,6 +11,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -99,17 +100,19 @@ export default function CreateRelationScreen() {
 
   if (loadingMembers) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenWrapper noBottomInset>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Ajouter une relation</Text>
 
-      {/* Type */}
       <Text style={styles.label}>Type de relation</Text>
       <View style={styles.row}>
         <Pressable
@@ -130,7 +133,6 @@ export default function CreateRelationScreen() {
         </Pressable>
       </View>
 
-      {/* Selection membre A */}
       <Text style={styles.label}>
         {type === 'couple' ? 'Membre 1' : 'Parent'}
         {memberA ? ` — ${memberName(memberA)}` : ''}
@@ -150,7 +152,6 @@ export default function CreateRelationScreen() {
         ))}
       </View>
 
-      {/* Selection membre B */}
       <Text style={styles.label}>
         {type === 'couple' ? 'Membre 2' : 'Enfant'}
         {memberB ? ` — ${memberName(memberB)}` : ''}
@@ -180,13 +181,14 @@ export default function CreateRelationScreen() {
         </Text>
       </Pressable>
     </ScrollView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0F1A' },
+  container: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B0F1A' },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { color: 'white', fontSize: 26, fontWeight: '700', marginBottom: 24 },
   label: { color: '#94A3B8', fontSize: 13, marginBottom: 8, marginTop: 12 },
   row: { flexDirection: 'row', gap: 10, marginBottom: 8 },

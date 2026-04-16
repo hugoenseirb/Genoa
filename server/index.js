@@ -25,7 +25,6 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// Middlewares globaux
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -35,10 +34,8 @@ app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Sert les photos uploadées
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes API
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/members", membersRoutes);
@@ -46,26 +43,21 @@ app.use("/api/v1/relations", relationsRoutes);
 app.use("/api/v1/tree", treeRoutes);
 app.use("/api/v1/stats", statsRoutes);
 
-// Healthcheck
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// 404
 app.use((req, res) => {
   res.status(404).json({ message: "Route introuvable" });
 });
 
-// Gestion globale des erreurs
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Erreur interne du serveur" });
 });
 
-// Socket.IO
 initSocket(io);
 
-// Démarrage
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Serveur démarré sur http://0.0.0.0:${PORT}`);
 });

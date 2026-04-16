@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useAuth } from '@/context/AuthContext';
 import { router } from 'expo-router';
 import { loginRequest } from '@/services/auth';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -34,7 +35,8 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScreenWrapper>
+      <View style={styles.container}>
       <Text style={styles.title}>Connexion</Text>
 
       <TextInput
@@ -69,7 +71,8 @@ export default function LoginScreen() {
       <TouchableOpacity onPress={() => router.replace('/register')}>
         <Text style={styles.link}>Pas de compte ? S'inscrire</Text>
       </TouchableOpacity>
-    </View>
+      </View>
+    </ScreenWrapper>
   );
 }
 
@@ -77,7 +80,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#0B0F1A',
     paddingHorizontal: 24,
   },
   title: {

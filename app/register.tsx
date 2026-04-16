@@ -6,11 +6,12 @@ import {
   Pressable,
   StyleSheet,
   Alert,
-} from 'react-native'; 
+} from 'react-native';
 
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { registerRequest } from '@/services/auth';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 export default function RegisterScreen() {
   const { login } = useAuth();
@@ -28,27 +29,14 @@ export default function RegisterScreen() {
 
     try {
         setLoading(true);
-        //log des ID renseignés pr vérif
-        console.log("ENVOI FRONT → BACK");
-        console.log({
-        username,
-        email,
-        password,
-        });
-      const data = await registerRequest(email, password, username); //envoie les données au server
+      const data = await registerRequest(email, password, username);
 
-      //log de la reponse server
-        console.log("REPONSE BACK → FRONT");
-        console.log(data);
-
-      // Si premier utilisateur : token direct (admin)
       if (data.token && data.user) {
         await login(data.token, data.user);
         router.replace('/(tabs)');
         return;
       }
 
-      // Sinon : compte pending
       Alert.alert(
         'Compte créé',
         data.message || 'En attente de validation par un admin'
@@ -64,7 +52,8 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScreenWrapper>
+      <View style={styles.container}>
       <Text style={styles.title}>Créer un compte</Text>
 
       <TextInput
@@ -107,7 +96,8 @@ export default function RegisterScreen() {
             {loading ? 'Création...' : "S'inscrire"}
         </Text>
       </Pressable>
-    </View>
+      </View>
+    </ScreenWrapper>
   );
 }
 
@@ -115,7 +105,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#0B0F1A',
     paddingHorizontal: 24,
   },
   title: {

@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 export default function HomeScreen() {
   const { logout } = useAuth();
@@ -11,90 +12,88 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>GENOA</Text>
-      <Text style={styles.subtitle}>Gestion d'arbre genealogique</Text>
+    <ScreenWrapper noBottomInset>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>GENOA</Text>
+        <Text style={styles.subtitle}>Gestion d'arbre genealogique</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Accueil</Text>
-        <Text style={styles.description}>
-          Choisis une action pour commencer.
-        </Text>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Accueil</Text>
+          <Text style={styles.description}>
+            Choisis une action pour commencer.
+          </Text>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/members')}
-        >
-          <Text style={styles.buttonText}>Voir les membres</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/members')}
+          >
+            <Text style={styles.buttonText}>Voir les membres</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/members/create')}
-        >
-          <Text style={styles.buttonText}>Ajouter un membre</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/members/create')}
+          >
+            <Text style={styles.buttonText}>Ajouter un membre</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/relations/create')}
-        >
-          <Text style={styles.buttonText}>Ajouter une relation</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/relations/create')}
+          >
+            <Text style={styles.buttonText}>Ajouter une relation</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/search')}
-        >
-          <Text style={styles.buttonText}>Rechercher un membre</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/search')}
+          >
+            <Text style={styles.buttonText}>Rechercher un membre</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, styles.treeButton, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/tree')}
-        >
-          <Text style={styles.buttonText}>Visualiser l'arbre</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, styles.treeButton, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/tree')}
+          >
+            <Text style={styles.buttonText}>Visualiser l'arbre</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, styles.statsButton, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/stats')}
-        >
-          <Text style={styles.buttonText}>Statistiques</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, styles.statsButton, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/stats')}
+          >
+            <Text style={styles.buttonText}>Statistiques</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, styles.adminButton, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/admin')}
-        >
-          <Text style={styles.buttonText}>Administration</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, styles.adminButton, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/admin')}
+          >
+            <Text style={styles.buttonText}>Administration</Text>
+          </Pressable>
 
-        <View style={{ height: 16 }} />
+          <View style={{ height: 16 }} />
 
-        <Pressable
-          style={({ pressed }) => [styles.button, styles.profileButton, pressed && styles.buttonPressed]}
-          onPress={() => router.push('/profile')}
-        >
-          <Text style={styles.buttonText}>Mon profil</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.button, styles.profileButton, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/profile')}
+          >
+            <Text style={styles.buttonText}>Mon profil</Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, styles.logoutButton, pressed && styles.buttonPressed]}
-          onPress={handleLogout}
-        >
-          <Text style={styles.buttonText}>Se deconnecter</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+          <Pressable
+            style={({ pressed }) => [styles.button, styles.logoutButton, pressed && styles.buttonPressed]}
+            onPress={handleLogout}
+          >
+            <Text style={styles.buttonText}>Se deconnecter</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0B0F1A',
-  },
   content: {
     paddingHorizontal: 24,
     paddingVertical: 40,

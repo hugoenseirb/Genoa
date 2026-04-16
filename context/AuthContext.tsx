@@ -33,8 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]);
         setToken(savedToken);
         setUser(savedUser ? JSON.parse(savedUser) : null);
-      } catch (error) {
-        console.log('Erreur chargement session :', error);
+      } catch {
       } finally {
         setIsLoading(false);
       }

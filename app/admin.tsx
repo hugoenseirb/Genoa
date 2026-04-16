@@ -12,6 +12,7 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -31,17 +32,19 @@ export default function AdminScreen() {
 
   if (user && user.role !== 'admin') {
     return (
-      <View style={styles.loader}>
-        <Text style={{ color: '#DC2626', fontSize: 16, textAlign: 'center' }}>
-          Acces refuse. Vous devez etre administrateur.
-        </Text>
-        <Pressable
-          style={{ marginTop: 20, padding: 14, backgroundColor: '#1E293B', borderRadius: 10 }}
-          onPress={() => router.replace('/(tabs)')}
-        >
-          <Text style={{ color: 'white', textAlign: 'center' }}>Retour</Text>
-        </Pressable>
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <Text style={{ color: '#DC2626', fontSize: 16, textAlign: 'center' }}>
+            Acces refuse. Vous devez etre administrateur.
+          </Text>
+          <Pressable
+            style={{ marginTop: 20, padding: 14, backgroundColor: '#1E293B', borderRadius: 10 }}
+            onPress={() => router.replace('/(tabs)')}
+          >
+            <Text style={{ color: 'white', textAlign: 'center' }}>Retour</Text>
+          </Pressable>
+        </View>
+      </ScreenWrapper>
     );
   }
 
@@ -62,7 +65,7 @@ export default function AdminScreen() {
       }
 
       if (!Array.isArray(data)) {
-        throw new Error('La réponse users n’est pas une liste');
+        throw new Error("La réponse users n'est pas une liste");
       }
 
       setUsers(data);
@@ -123,7 +126,6 @@ export default function AdminScreen() {
   }
 
   async function doDelete(userId: string) {
-
     try {
       setActionLoadingId(userId);
 
@@ -198,41 +200,44 @@ export default function AdminScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Administration</Text>
-      <Text style={styles.subtitle}>Utilisateurs en attente</Text>
+    <ScreenWrapper>
+      <View style={styles.container}>
+        <Text style={styles.title}>Administration</Text>
+        <Text style={styles.subtitle}>Utilisateurs en attente</Text>
 
-      {users.length === 0 ? (
-        <Text style={styles.empty}>Aucun utilisateur pending</Text>
-      ) : (
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      )}
-    </View>
+        {users.length === 0 ? (
+          <Text style={styles.empty}>Aucun utilisateur pending</Text>
+        ) : (
+          <FlatList
+            data={users}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        )}
+      </View>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0F1A',
     padding: 20,
   },
   loader: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#0B0F1A',
+    padding: 20,
   },
   title: {
     color: 'white',

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -69,77 +70,80 @@ export default function StatsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
   if (!stats) {
     return (
-      <View style={styles.loader}>
-        <Text style={styles.errorText}>Impossible de charger les stats</Text>
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <Text style={styles.errorText}>Impossible de charger les stats</Text>
+        </View>
+      </ScreenWrapper>
     );
   }
 
   const genderEntries = Object.entries(stats.gender_distribution);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Statistiques</Text>
+    <ScreenWrapper noBottomInset>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Statistiques</Text>
 
-      {/* Chiffres clés */}
-      <View style={styles.grid}>
-        <StatCard value={stats.total_members} label="Membres" color="#2563EB" />
-        <StatCard value={stats.total_couples} label="Couples" color="#EC4899" />
-        <StatCard value={stats.total_generations} label="Générations" color="#059669" />
-        <StatCard
-          value={stats.avg_children_per_parent != null ? stats.avg_children_per_parent.toFixed(1) : '—'}
-          label="Enfants / parent"
-          color="#7C3AED"
-        />
-      </View>
-
-      {/* Espérance de vie */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Espérance de vie moyenne</Text>
-        <Text style={styles.bigValue}>
-          {stats.avg_life_expectancy != null
-            ? `${stats.avg_life_expectancy} ans`
-            : 'Pas assez de données'}
-        </Text>
-        <Text style={styles.cardSub}>Membres décédés avec dates connues</Text>
-      </View>
-
-      {/* Distribution des genres */}
-      {genderEntries.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Répartition par genre</Text>
-          {genderEntries.map(([g, count]) => {
-            const pct = Math.round((count / stats.total_members) * 100);
-            const color = GENDER_COLORS[g] ?? '#64748B';
-            return (
-              <View key={g} style={styles.genderRow}>
-                <Text style={styles.genderLabel}>
-                  {GENDER_LABELS[g] ?? g} — {count}
-                </Text>
-                <View style={styles.barBg}>
-                  <View
-                    style={[styles.barFill, { width: `${pct}%` as any, backgroundColor: color }]}
-                  />
-                </View>
-                <Text style={[styles.pct, { color }]}>{pct}%</Text>
-              </View>
-            );
-          })}
+        <View style={styles.grid}>
+          <StatCard value={stats.total_members} label="Membres" color="#2563EB" />
+          <StatCard value={stats.total_couples} label="Couples" color="#EC4899" />
+          <StatCard value={stats.total_generations} label="Générations" color="#059669" />
+          <StatCard
+            value={stats.avg_children_per_parent != null ? stats.avg_children_per_parent.toFixed(1) : '—'}
+            label="Enfants / parent"
+            color="#7C3AED"
+          />
         </View>
-      )}
 
-      <Pressable style={styles.refreshBtn} onPress={() => { setLoading(true); fetchStats(); }}>
-        <Text style={styles.refreshText}>Actualiser</Text>
-      </Pressable>
-    </ScrollView>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Espérance de vie moyenne</Text>
+          <Text style={styles.bigValue}>
+            {stats.avg_life_expectancy != null
+              ? `${stats.avg_life_expectancy} ans`
+              : 'Pas assez de données'}
+          </Text>
+          <Text style={styles.cardSub}>Membres décédés avec dates connues</Text>
+        </View>
+
+        {genderEntries.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Répartition par genre</Text>
+            {genderEntries.map(([g, count]) => {
+              const pct = Math.round((count / stats.total_members) * 100);
+              const color = GENDER_COLORS[g] ?? '#64748B';
+              return (
+                <View key={g} style={styles.genderRow}>
+                  <Text style={styles.genderLabel}>
+                    {GENDER_LABELS[g] ?? g} — {count}
+                  </Text>
+                  <View style={styles.barBg}>
+                    <View
+                      style={[styles.barFill, { width: `${pct}%` as any, backgroundColor: color }]}
+                    />
+                  </View>
+                  <Text style={[styles.pct, { color }]}>{pct}%</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        <Pressable style={styles.refreshBtn} onPress={() => { setLoading(true); fetchStats(); }}>
+          <Text style={styles.refreshText}>Actualiser</Text>
+        </Pressable>
+      </ScrollView>
+    </ScreenWrapper>
   );
 }
 
@@ -153,10 +157,6 @@ function StatCard({ value, label, color }: { value: string | number; label: stri
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0B0F1A',
-  },
   content: {
     padding: 20,
     paddingBottom: 40,
@@ -165,7 +165,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0B0F1A',
   },
   errorText: {
     color: '#94A3B8',

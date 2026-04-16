@@ -11,6 +11,7 @@ import {
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ScreenWrapper from '@/components/ScreenWrapper';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -81,53 +82,54 @@ export default function SearchScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recherche</Text>
+    <ScreenWrapper>
+      <View style={styles.container}>
+        <Text style={styles.title}>Recherche</Text>
 
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Prénom ou nom…"
-          placeholderTextColor="#64748B"
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-          autoCapitalize="none"
-        />
-        <Pressable style={styles.searchBtn} onPress={handleSearch}>
-          <Text style={styles.searchBtnText}>OK</Text>
-        </Pressable>
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Prénom ou nom…"
+            placeholderTextColor="#64748B"
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+            autoCapitalize="none"
+          />
+          <Pressable style={styles.searchBtn} onPress={handleSearch}>
+            <Text style={styles.searchBtnText}>OK</Text>
+          </Pressable>
+        </View>
+
+        {loading && (
+          <ActivityIndicator
+            size="large"
+            color="#2563EB"
+            style={{ marginTop: 40 }}
+          />
+        )}
+
+        {!loading && searched && results.length === 0 && (
+          <Text style={styles.empty}>Aucun résultat pour « {query} »</Text>
+        )}
+
+        {!loading && results.length > 0 && (
+          <FlatList
+            data={results}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        )}
       </View>
-
-      {loading && (
-        <ActivityIndicator
-          size="large"
-          color="#2563EB"
-          style={{ marginTop: 40 }}
-        />
-      )}
-
-      {!loading && searched && results.length === 0 && (
-        <Text style={styles.empty}>Aucun résultat pour « {query} »</Text>
-      )}
-
-      {!loading && results.length > 0 && (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      )}
-    </View>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0F1A',
     padding: 20,
   },
   title: {

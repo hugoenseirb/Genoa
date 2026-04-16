@@ -6,9 +6,6 @@ const { verifyToken } = require("../middleware/auth");
 
 const router = express.Router();
 
-// POST /auth/register
-// Inscription. Le 1er utilisateur inscrit devient automatiquement admin (status=active).
-// Les suivants ont status=pending et doivent être validés par un admin.
 router.post("/register", (req, res) => {
   const { email, password, username } = req.body;
 
@@ -16,7 +13,6 @@ router.post("/register", (req, res) => {
     return res.status(400).json({ message: "email, password et username sont requis" });
   }
 
-  // Vérifie si c'est le premier utilisateur
   pool.query("SELECT COUNT(*) FROM users")
     .then(({ rows }) => {
       const isFirst = parseInt(rows[0].count) === 0;
@@ -40,7 +36,6 @@ router.post("/register", (req, res) => {
           user,
         });
       }
-      // Premier utilisateur : on retourne directement un token
       const token = jwt.sign(
         { userId: user.id, role: user.role },
         process.env.JWT_SECRET,
@@ -57,8 +52,6 @@ router.post("/register", (req, res) => {
     });
 });
 
-// POST /auth/login
-// Connexion. Bloqué si status !== 'active'.
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -102,8 +95,6 @@ router.post("/login", (req, res) => {
     });
 });
 
-// GET /auth/me
-// Retourne l'utilisateur courant (token requis).
 router.get("/me", verifyToken, (req, res) => {
   res.json({ user: req.user });
 });

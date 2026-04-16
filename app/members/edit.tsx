@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import {
   ActivityIndicator,
   Alert,
@@ -12,8 +13,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
+import ScreenWrapper from "@/components/ScreenWrapper";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -60,6 +63,8 @@ export default function EditMemberScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoStatus, setPhotoStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -120,12 +125,13 @@ export default function EditMemberScreen() {
   }
 
   async function handlePickPhoto() {
+    setPhotoStatus(null);
     try {
       const permission =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert("Erreur", "Permission galerie refusée");
+        setPhotoStatus({ ok: false, msg: "Permission galerie refusée" });
         return;
       }
 
@@ -139,54 +145,56 @@ export default function EditMemberScreen() {
 
       const asset = result.assets[0];
       if (!asset?.uri) {
-        Alert.alert("Erreur", "Image invalide");
+        setPhotoStatus({ ok: false, msg: "Image invalide" });
         return;
       }
 
       await uploadPhoto(asset.uri, asset.mimeType);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erreur inconnue";
-      Alert.alert("Erreur", message);
+      setPhotoStatus({ ok: false, msg: error instanceof Error ? error.message : "Erreur inconnue" });
     }
   }
 
-  async function uploadPhoto(uri: string, mimeType?: string) {
+  async function uploadPhoto(uri: string, _mimeType?: string) {
     try {
       setUploadingPhoto(true);
+      setPhotoStatus({ ok: true, msg: "Envoi en cours..." });
 
       const token = await AsyncStorage.getItem("token");
       const formData = new FormData();
 
-      const filename = uri.split("/").pop() || "photo.jpg";
-      const finalType = mimeType || "image/jpeg";
+      const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+      const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
+      const filename = `photo.${safeExt}`;
+      const finalType = safeExt === "png" ? "image/png"
+        : safeExt === "webp" ? "image/webp"
+        : "image/jpeg";
 
-      formData.append("photo", {
-        uri,
-        name: filename,
-        type: finalType,
-      } as any);
+      if (Platform.OS === "web") {
+        const blobRes = await fetch(uri);
+        const blob = await blobRes.blob();
+        formData.append("photo", blob, filename);
+      } else {
+        formData.append("photo", { uri, name: filename, type: finalType } as any);
+      }
 
       const response = await fetch(`${API_URL}/members/${id}/photo`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Erreur upload photo");
+      if (response.status === 200 || response.ok) {
+        const data = await response.json();
+        setPhotoUrl(data.photo_url || "");
+        setPhotoStatus({ ok: true, msg: "Photo mise à jour ✓" });
+      } else {
+        let msg = `Erreur ${response.status}`;
+        try { const d = await response.json(); if (d?.message) msg = d.message; } catch {}
+        setPhotoStatus({ ok: false, msg });
       }
-
-      setPhotoUrl(data.photo_url || "");
-      Alert.alert("Succès", "Photo mise à jour");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erreur inconnue";
-      Alert.alert("Erreur", message);
+      setPhotoStatus({ ok: false, msg: error instanceof Error ? error.message : "Erreur réseau" });
     } finally {
       setUploadingPhoto(false);
     }
@@ -258,33 +266,48 @@ export default function EditMemberScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
   const photoSrc = buildPhotoUrl(photoUrl);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenWrapper noBottomInset>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
       {photoSrc ? (
-        <Image source={{ uri: photoSrc }} style={styles.photo} />
+        <Image
+          key={photoSrc}
+          source={{ uri: photoSrc }}
+          style={styles.photo}
+          resizeMode="cover"
+        />
       ) : (
         <View style={styles.photoPlaceholder}>
           <Text style={styles.photoPlaceholderText}>Aucune photo</Text>
         </View>
       )}
 
-      <Pressable
+      <TouchableOpacity
         style={[styles.photoButton, uploadingPhoto && styles.disabled]}
         onPress={handlePickPhoto}
         disabled={uploadingPhoto}
+        activeOpacity={0.7}
       >
         <Text style={styles.photoButtonText}>
-          {uploadingPhoto ? "Upload..." : "Choisir une photo"}
+          {uploadingPhoto ? "Envoi en cours..." : "Choisir une photo"}
         </Text>
-      </Pressable>
+      </TouchableOpacity>
+
+      {photoStatus ? (
+        <Text style={[styles.photoStatusText, { color: photoStatus.ok ? "#34D399" : "#F87171" }]}>
+          {photoStatus.msg}
+        </Text>
+      ) : null}
 
       <Text style={styles.title}>Modifier le membre</Text>
 
@@ -457,6 +480,7 @@ export default function EditMemberScreen() {
         </Text>
       </Pressable>
     </ScrollView>
+    </ScreenWrapper>
   );
 }
 
@@ -500,6 +524,12 @@ const styles = StyleSheet.create({
   photoButtonText: {
     color: "white",
     fontWeight: "600",
+  },
+  photoStatusText: {
+    textAlign: "center",
+    fontSize: 13,
+    marginBottom: 12,
+    marginTop: -8,
   },
   title: { color: "white", fontSize: 26, fontWeight: "700", marginBottom: 24 },
   sectionTitle: {

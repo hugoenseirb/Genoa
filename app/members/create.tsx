@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import ScreenWrapper from "@/components/ScreenWrapper";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -108,7 +109,8 @@ export default function CreateMemberScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenWrapper noBottomInset>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Ajouter un membre</Text>
 
       <Text style={styles.label}>Prénom *</Text>
@@ -296,6 +298,7 @@ export default function CreateMemberScreen() {
         </Text>
       </Pressable>
     </ScrollView>
+    </ScreenWrapper>
   );
 }
 
