@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { registerRequest } from '@/services/auth';
 import ScreenWrapper from '@/components/ScreenWrapper';
+import { colors } from '@/constants/sharedStyles';
 
 export default function RegisterScreen() {
   const { login } = useAuth();
@@ -102,46 +103,10 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: '#1E293B',
-    color: 'white',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 16,
-    marginBottom: 14,
-  },
-  button: {
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  link: {
-    marginTop: 18,
-    textAlign: 'center',
-    color: '#93C5FD',
-    fontSize: 15,
-  },
+  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
+  title: { fontSize: 30, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 24, textAlign: 'center' },
+  input: { backgroundColor: colors.surface, color: colors.textPrimary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, marginBottom: 14 },
+  button: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: colors.textPrimary, fontSize: 16, fontWeight: '600' },
 });

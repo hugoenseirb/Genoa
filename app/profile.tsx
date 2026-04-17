@@ -13,6 +13,7 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/context/AuthContext';
 import ScreenWrapper from '@/components/ScreenWrapper';
+import { colors, shared } from '@/constants/sharedStyles';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -160,114 +161,23 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    color: 'white',
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 24,
-  },
-  card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatarLetter: {
-    color: 'white',
-    fontSize: 32,
-    fontWeight: '700',
-  },
-  username: {
-    color: 'white',
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  email: {
-    color: '#94A3B8',
-    fontSize: 15,
-    marginBottom: 12,
-  },
-  roleBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  roleText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  infoCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#0F172A',
-  },
-  infoLabel: {
-    color: '#64748B',
-    fontSize: 14,
-  },
-  infoValue: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  adminBtn: {
-    backgroundColor: '#7C3AED',
-    padding: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  adminBtnText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  logoutBtn: {
-    backgroundColor: '#1E293B',
-    borderWidth: 1,
-    borderColor: '#DC2626',
-    padding: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  logoutText: {
-    color: '#DC2626',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  errorText: {
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginTop: 40,
-  },
+  content: { padding: 20, paddingBottom: 40 },
+  loader: shared.loader,
+  title: { color: colors.textPrimary, fontSize: 30, fontWeight: '700', marginBottom: 24 },
+  card: { backgroundColor: colors.surface, borderRadius: 16, padding: 24, alignItems: 'center', marginBottom: 16 },
+  avatarCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  avatarLetter: { color: colors.textPrimary, fontSize: 32, fontWeight: '700' },
+  username: { color: colors.textPrimary, fontSize: 22, fontWeight: '700', marginBottom: 4 },
+  email: { color: colors.textMuted, fontSize: 15, marginBottom: 12 },
+  roleBadge: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
+  roleText: { fontSize: 13, fontWeight: '600' },
+  infoCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 16 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.bg },
+  infoLabel: { color: colors.textDisabled, fontSize: 14 },
+  infoValue: { color: colors.textPrimary, fontSize: 14, fontWeight: '500' },
+  adminBtn: { backgroundColor: '#7C3AED', padding: 14, borderRadius: 12, alignItems: 'center', marginBottom: 12 },
+  adminBtnText: { color: colors.textPrimary, fontWeight: '600', fontSize: 15 },
+  logoutBtn: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger, padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  logoutText: { color: colors.danger, fontWeight: '600', fontSize: 15 },
+  errorText: { color: colors.textMuted, textAlign: 'center', marginTop: 40 },
 });

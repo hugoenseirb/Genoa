@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import ScreenWrapper from '@/components/ScreenWrapper';
+import { colors, shared } from '@/constants/sharedStyles';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -230,74 +231,19 @@ export default function AdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    color: 'white',
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: '#94A3B8',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  empty: {
-    color: '#CBD5E1',
-    fontSize: 16,
-  },
-  card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  username: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  email: {
-    color: '#CBD5E1',
-    fontSize: 14,
-    marginBottom: 6,
-  },
-  status: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  approveButton: {
-    backgroundColor: '#059669',
-  },
-  deleteButton: {
-    backgroundColor: '#DC2626',
-  },
-  disabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
+  container: { flex: 1, padding: 20 },
+  loader: shared.loader,
+  title: { color: colors.textPrimary, fontSize: 30, fontWeight: '700', marginBottom: 8 },
+  subtitle: { color: colors.textMuted, fontSize: 16, marginBottom: 20 },
+  empty: { color: colors.textPrimary, fontSize: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 12 },
+  username: { color: colors.textPrimary, fontSize: 18, fontWeight: '600', marginBottom: 4 },
+  email: { color: colors.textPrimary, fontSize: 14, marginBottom: 6 },
+  status: { color: colors.textMuted, fontSize: 13, marginBottom: 4 },
+  row: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  button: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  approveButton: { backgroundColor: colors.success },
+  deleteButton: { backgroundColor: colors.danger },
+  disabled: shared.disabled,
+  buttonText: { color: colors.textPrimary, fontWeight: '600' },
 });

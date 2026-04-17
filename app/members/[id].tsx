@@ -13,14 +13,10 @@ import {
   View,
 } from "react-native";
 import ScreenWrapper from "@/components/ScreenWrapper";
+import { buildPhotoUrl, Contacts, formatDate, normalizeArray, normalizeContacts } from "@/utils/memberUtils";
+import { colors, shared } from "@/constants/sharedStyles";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
-
-type Contacts = {
-  addresses?: string[];
-  phones?: string[];
-  emails?: string[];
-};
 
 type Member = {
   id: string;
@@ -56,43 +52,6 @@ const FILIATION_LABELS: Record<string, string> = {
   adopted: "Adopté(e)",
   unknown: "Inconnu",
 };
-
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return "Non renseignée";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function normalizeArray(value: unknown): string[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean).map(String);
-  return [];
-}
-
-function normalizeContacts(value: unknown): Contacts {
-  if (!value || typeof value !== "object") return {};
-  const contacts = value as Contacts;
-  return {
-    addresses: normalizeArray(contacts.addresses),
-    phones: normalizeArray(contacts.phones),
-    emails: normalizeArray(contacts.emails),
-  };
-}
-
-function buildPhotoUrl(photoUrl?: string) {
-  if (!photoUrl) return null;
-  if (photoUrl.startsWith("http")) return photoUrl;
-
-  const baseUrl = API_URL?.replace("/api/v1", "");
-  if (!baseUrl) return null;
-
-  return `${baseUrl}${photoUrl}`;
-}
 
 export default function MemberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -212,7 +171,7 @@ export default function MemberDetailScreen() {
   if (loading) {
     return (
       <ScreenWrapper>
-        <View style={styles.loader}>
+        <View style={shared.loader}>
           <ActivityIndicator size="large" color="#2563EB" />
         </View>
       </ScreenWrapper>
@@ -222,7 +181,7 @@ export default function MemberDetailScreen() {
   if (!member) {
     return (
       <ScreenWrapper>
-        <View style={styles.loader}>
+        <View style={shared.loader}>
         <Text style={styles.error}>Membre introuvable</Text>
         </View>
       </ScreenWrapper>
@@ -231,7 +190,7 @@ export default function MemberDetailScreen() {
 
   const professions = normalizeArray(member.professions);
   const contacts = normalizeContacts(member.contacts);
-  const photoSrc = buildPhotoUrl(member.photo_url);
+  const photoSrc = buildPhotoUrl(member.photo_url, API_URL);
 
   return (
     <ScreenWrapper noBottomInset>
@@ -435,100 +394,31 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0B0F1A" },
   content: { padding: 20, paddingBottom: 100 },
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0B0F1A",
-  },
-  photo: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    alignSelf: "center",
-    marginBottom: 18,
-  },
-  photoPlaceholder: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    alignSelf: "center",
-    marginBottom: 18,
-    backgroundColor: "#1E293B",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  photoPlaceholderText: {
-    color: "#64748B",
-    fontSize: 13,
-  },
-  title: {
-    color: "white",
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  card: {
-    backgroundColor: "#1E293B",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
+  photo: shared.photoCircle,
+  photoPlaceholder: { ...shared.photoCircle, backgroundColor: colors.surface, justifyContent: "center", alignItems: "center" },
+  photoPlaceholderText: { color: colors.textDisabled, fontSize: 13 },
+  title: { color: colors.textPrimary, fontSize: 28, fontWeight: "700", marginBottom: 20, textAlign: "center" },
+  card: shared.card,
   infoRow: { marginBottom: 10 },
-  label: { color: "#94A3B8", fontSize: 12 },
-  value: { color: "white", fontSize: 15, fontWeight: "500", marginTop: 2 },
-  sectionTitle: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  empty: { color: "#64748B", fontSize: 14, marginBottom: 20 },
-  listItem: {
-    color: "white",
-    fontSize: 15,
-    marginBottom: 8,
-  },
-  relationCard: {
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+  label: { color: colors.textMuted, fontSize: 12 },
+  value: { color: colors.textPrimary, fontSize: 15, fontWeight: "500", marginTop: 2 },
+  sectionTitle: shared.sectionTitle,
+  empty: { color: colors.textDisabled, fontSize: 14, marginBottom: 20 },
+  listItem: { color: colors.textPrimary, fontSize: 15, marginBottom: 8 },
+  relationCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   relationInfo: { flex: 1, marginRight: 10 },
-  relationOther: { color: "white", fontSize: 15, fontWeight: "600" },
-  relationLabel: { color: "#94A3B8", fontSize: 12, marginTop: 3 },
-  deleteRelBtn: {
-    backgroundColor: "#7F1D1D",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
+  relationOther: { color: colors.textPrimary, fontSize: 15, fontWeight: "600" },
+  relationLabel: { color: colors.textMuted, fontSize: 12, marginTop: 3 },
+  deleteRelBtn: { backgroundColor: "#7F1D1D", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   deleteRelText: { color: "#FCA5A5", fontSize: 13, fontWeight: "600" },
   actions: { marginTop: 8 },
-  button: {
-    backgroundColor: "#2563EB",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  editButton: { backgroundColor: "#059669" },
-  deleteButton: { backgroundColor: "#DC2626" },
-  buttonText: { color: "white", fontWeight: "600" },
-  error: { color: "white" },
+  button: { ...shared.button, backgroundColor: colors.primary },
+  editButton: { backgroundColor: colors.success },
+  deleteButton: { backgroundColor: colors.danger },
+  buttonText: shared.buttonText,
+  error: { color: colors.textPrimary },
   confirmRow: { marginBottom: 12 },
-  confirmText: {
-    color: "#FCA5A5",
-    fontSize: 14,
-    marginBottom: 10,
-    textAlign: "center",
-  },
+  confirmText: { color: "#FCA5A5", fontSize: 14, marginBottom: 10, textAlign: "center" },
   confirmBtns: { flexDirection: "row", gap: 10 },
 });

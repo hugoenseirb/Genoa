@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 import ScreenWrapper from "@/components/ScreenWrapper";
+import { colors, shared } from "@/constants/sharedStyles";
+import { normalizeArray, buildPhotoUrl } from "@/utils/memberUtils";
 
 type Member = {
   id: string;
@@ -22,22 +24,6 @@ type Member = {
 };
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
-
-function normalizeArray(value: unknown): string[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean).map(String);
-  return [];
-}
-
-function buildPhotoUrl(photoUrl?: string) {
-  if (!photoUrl) return null;
-  if (photoUrl.startsWith("http")) return photoUrl;
-
-  const baseUrl = API_URL?.replace("/api/v1", "");
-  if (!baseUrl) return null;
-
-  return `${baseUrl}${photoUrl}`;
-}
 
 export default function MembersScreen() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -68,7 +54,7 @@ export default function MembersScreen() {
 
   function renderItem({ item }: { item: Member }) {
     const professions = normalizeArray(item.professions);
-    const photoSrc = buildPhotoUrl(item.photo_url);
+    const photoSrc = buildPhotoUrl(item.photo_url, API_URL);
 
     return (
       <Pressable
@@ -129,70 +115,16 @@ export default function MembersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-  },
-  title: {
-    color: "white",
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 20,
-  },
-  card: {
-    backgroundColor: "#1E293B",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  avatarPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#334155",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarPlaceholderText: {
-    color: "white",
-    fontWeight: "700",
-  },
-  cardText: {
-    flex: 1,
-  },
-  name: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  profession: {
-    color: "#94A3B8",
-    fontSize: 13,
-    marginTop: 4,
-  },
-  button: {
-    backgroundColor: "#2563EB",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "600",
-  },
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-  },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
+  title: { color: colors.textPrimary, fontSize: 28, fontWeight: "700", marginBottom: 20 },
+  card: { backgroundColor: colors.surface, padding: 14, borderRadius: 12, marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 12 },
+  avatar: { width: 52, height: 52, borderRadius: 26 },
+  avatarPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.border, justifyContent: "center", alignItems: "center" },
+  avatarPlaceholderText: { color: colors.textPrimary, fontWeight: "700" },
+  cardText: { flex: 1 },
+  name: { color: colors.textPrimary, fontSize: 16, fontWeight: "600" },
+  profession: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  button: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: "center", marginTop: 10, marginBottom: 10 },
+  buttonText: { color: colors.textPrimary, fontWeight: "600" },
+  loader: shared.loader,
 });

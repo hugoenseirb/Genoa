@@ -12,7 +12,7 @@ ET8 PG219 : Développement d'applications pour terminaux mobiles
 | Base de données     | PostgreSQL                    |
 | Authentification    | JWT (jsonwebtoken + bcryptjs) |
 | Temps reel          | Socket.IO                     |
-| Visualisation arbre | D3.js / d3-dag (via WebView)  |
+| Visualisation arbre | @dagrejs/dagre + SVG React Native natif |
 
 ## Fonctionnalités implémentées
 
@@ -32,8 +32,8 @@ ET8 PG219 : Développement d'applications pour terminaux mobiles
 - Liste des inscriptions en attente — Antoine Husser
 - Validation d'une inscription (pending → active) — Antoine Husser
 - Modification du rôle d'un utilisateur (admin / editor / reader) — Antoine Husser
-- Modification d'un compte (email, username, password) — Antoine Husser
-- Création d'un compte pour un tiers directement actif — Antoine Husser
+- Modification d'un compte (email, username, password) via `PUT /users/:id` — Antoine Husser (API uniquement)
+- Création d'un compte pour un tiers directement actif via `POST /users` — Antoine Husser (API uniquement)
 - Suppression d'un compte — Antoine Husser
 - Interface d'administration — Hugo
 
@@ -57,7 +57,7 @@ ET8 PG219 : Développement d'applications pour terminaux mobiles
 
 ### Visualisation de l'arbre genealogique
 
-- Affichage graphique interactif (D3.js via WebView) — Antoine Husser
+- Affichage graphique interactif (dagre layout + SVG React Native natif, sans WebView) — Antoine Husser
 - Zoom / déplacement — Antoine Husser
 - Clic sur un nœud → détails du membre — Antoine Husser
 - Filtres : ascendants, descendants, fratrie, conjoints — Antoine Husser
@@ -100,8 +100,8 @@ ET8 PG219 : Développement d'applications pour terminaux mobiles
 
 ### Prérequis
 
-- Node.js 18+
-- PostgreSQL 16+
+- Node.js 
+- PostgreSQL 
 - Expo CLI
 
 ### Lancement global

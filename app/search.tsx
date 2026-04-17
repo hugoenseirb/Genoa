@@ -12,6 +12,8 @@ import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScreenWrapper from '@/components/ScreenWrapper';
+import { colors } from '@/constants/sharedStyles';
+import { formatDate } from '@/utils/memberUtils';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -22,13 +24,6 @@ type Member = {
   gender?: string;
   birth_date?: string;
 };
-
-function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
@@ -128,60 +123,14 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  title: {
-    color: 'white',
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 20,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#1E293B',
-    color: 'white',
-    padding: 14,
-    borderRadius: 10,
-    fontSize: 15,
-  },
-  searchBtn: {
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-  },
-  searchBtnText: {
-    color: 'white',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  card: {
-    backgroundColor: '#1E293B',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  name: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  sub: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  empty: {
-    color: '#94A3B8',
-    fontSize: 15,
-    textAlign: 'center',
-    marginTop: 40,
-  },
+  container: { flex: 1, padding: 20 },
+  title: { color: colors.textPrimary, fontSize: 30, fontWeight: '700', marginBottom: 20 },
+  searchRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  input: { flex: 1, backgroundColor: colors.surface, color: colors.textPrimary, padding: 14, borderRadius: 10, fontSize: 15 },
+  searchBtn: { backgroundColor: colors.primary, paddingHorizontal: 20, borderRadius: 10, justifyContent: 'center' },
+  searchBtnText: { color: colors.textPrimary, fontWeight: '700', fontSize: 15 },
+  card: { backgroundColor: colors.surface, padding: 16, borderRadius: 12, marginBottom: 10 },
+  name: { color: colors.textPrimary, fontSize: 16, fontWeight: '600' },
+  sub: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  empty: { color: colors.textMuted, fontSize: 15, textAlign: 'center', marginTop: 40 },
 });

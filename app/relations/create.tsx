@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScreenWrapper from '@/components/ScreenWrapper';
+import { colors, shared } from '@/constants/sharedStyles';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -186,46 +187,22 @@ export default function CreateRelationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { color: 'white', fontSize: 26, fontWeight: '700', marginBottom: 24 },
-  label: { color: '#94A3B8', fontSize: 13, marginBottom: 8, marginTop: 12 },
+  loader: shared.loader,
+  title: { color: colors.textPrimary, fontSize: 26, fontWeight: '700', marginBottom: 24 },
+  label: { color: colors.textMuted, fontSize: 13, marginBottom: 8, marginTop: 12 },
   row: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  typeBtn: {
-    flex: 1,
-    backgroundColor: '#1E293B',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  typeBtnActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  typeBtnText: { color: '#94A3B8', fontWeight: '600' },
-  typeBtnTextActive: { color: 'white' },
+  typeBtn: { flex: 1, backgroundColor: colors.surface, paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  typeBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  typeBtnText: { color: colors.textMuted, fontWeight: '600' },
+  typeBtnTextActive: { color: colors.textPrimary },
   memberList: { gap: 6, marginBottom: 4 },
-  memberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1E293B',
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  memberRowSelected: { borderColor: '#2563EB', backgroundColor: '#1E3A5F' },
+  memberRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, padding: 14, borderRadius: 10, borderWidth: 1, borderColor: 'transparent' },
+  memberRowSelected: { borderColor: colors.primary, backgroundColor: '#1E3A5F' },
   memberText: { color: '#CBD5E1', fontSize: 15 },
-  memberTextSelected: { color: 'white', fontWeight: '600' },
-  checkmark: { color: '#2563EB', fontSize: 16, fontWeight: '700' },
-  button: {
-    backgroundColor: '#2563EB',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  disabled: { opacity: 0.6 },
-  buttonText: { color: 'white', fontWeight: '600', fontSize: 16 },
+  memberTextSelected: { color: colors.textPrimary, fontWeight: '600' },
+  checkmark: { color: colors.primary, fontSize: 16, fontWeight: '700' },
+  button: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 24 },
+  disabled: shared.disabled,
+  buttonText: { color: colors.textPrimary, fontWeight: '600', fontSize: 16 },
 });
